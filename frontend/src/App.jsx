@@ -6,7 +6,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import "./App.css";
 
 function App() {
-  const [inputText, setInputText] = useState("the quick brown fox jumps over the lazy dog");
+  const [inputText, setInputText] = useState("Line 42 : Segmentation Fault. Classic rite of");
   const [tokenData, setTokenData] = useState(null);
   const [embData, setEmbData] = useState(null);
   const [attData, setAttData] = useState(null);
@@ -118,6 +118,7 @@ function App() {
           {!loading && !error && !isDataMissing && (
             <div className="app-main-overlay">
               <LLMStoryController
+                inputText={inputText}
                 tokens={tokenData.tokens}
                 embeddings3d={embData.embeddings3d}
                 attention={attData.attentions}

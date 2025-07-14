@@ -43,11 +43,28 @@ def tokenize_text(input: TextInput):
         return {"input_ids": [], "tokens": [], "attention_mask": []}
     try:
         inputs = tokenizer(input.text, return_tensors="pt", add_special_tokens=True)
-        tokens = tokenizer.convert_ids_to_tokens(inputs["input_ids"][0])
-        input_ids = inputs["input_ids"][0].tolist()  # Convert tensor to simple list
+        raw_tokens = tokenizer.convert_ids_to_tokens(inputs["input_ids"][0])
+        input_ids = inputs["input_ids"][0].tolist()
+        
+        # Clean up tokens for better display and remove duplicates
+        cleaned_tokens = []
+        seen_tokens = set()
+        
+        for token in raw_tokens:
+            # Clean the token
+            if token.startswith('Ġ'):
+                clean_token = ' ' + token[1:]
+            else:
+                clean_token = token
+            
+            # Only add if we haven't seen this exact token before
+            if clean_token not in seen_tokens:
+                cleaned_tokens.append(clean_token)
+                seen_tokens.add(clean_token)
+        
         return {
-            "input_ids": input_ids,  # Now it's a simple list of integers
-            "tokens": tokens,
+            "input_ids": input_ids,
+            "tokens": cleaned_tokens,
             "attention_mask": inputs["attention_mask"].tolist()
         }
     except Exception as e:

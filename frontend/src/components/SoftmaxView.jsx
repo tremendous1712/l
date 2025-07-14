@@ -24,8 +24,7 @@ export const SoftmaxView = ({ nextToken }) => {
   
   // Animation springs for each bar
   const barSprings = probs.map((p, i) => useSpring({
-    scale: showBars ? [1, p.prob / maxProb, 1] : [1, 0, 1],
-    position: [i * 1.2 - (probs.length * 1.2) / 2, (p.prob / maxProb) * 2, 0],
+    scaleY: showBars ? p.prob / maxProb : 0,
     config: { mass: 1, tension: 280, friction: 60 }
   }));
   
@@ -39,23 +38,27 @@ export const SoftmaxView = ({ nextToken }) => {
       </Html>
 
       {/* Bars - centered in 3D space */}
-      {barSprings.map((spring, i) => (
-        <group key={i}>
-          <animated.mesh position={[(i * 1.2) - ((probs.length * 1.2) / 2), 0, 0]}>
+      {probs.map((prob, i) => (
+        <group key={i} position={[(i * 1.2) - ((probs.length * 1.2) / 2), 0, 0]}>
+          <animated.mesh 
+            position-y={barSprings[i].scaleY.to(s => s * 2)}
+            scale={barSprings[i].scaleY.to(s => [1, s, 1])}
+            position={[0, 2, 0]}
+          >
             <boxGeometry args={[1, 4, 1]} />
             <meshStandardMaterial color={i === 0 ? "#f59e42" : "#38bdf8"} />
           </animated.mesh>
           
           {/* Token labels */}
-          <Html center position={[(i * 1.2) - ((probs.length * 1.2) / 2), -2, 0]}>
+          <Html center position={[0, -2, 0]}>
             <div style={{ 
               color: "white", 
               transform: "scale(0.7) translateX(-50%)",
               textAlign: "center",
               width: "100px"
             }}>
-              <div style={{ fontWeight: "bold" }}>{probs[i].token}</div>
-              <div style={{ color: "#aaa" }}>{(probs[i].prob * 100).toFixed(1)}%</div>
+              <div style={{ fontWeight: "bold" }}>{prob.token}</div>
+              <div style={{ color: "#aaa" }}>{(prob.prob * 100).toFixed(1)}%</div>
             </div>
           </Html>
         </group>

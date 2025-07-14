@@ -14,7 +14,7 @@ const STORY_STEPS = [
   { name: "Softmax" },
 ];
 
-export const LLMStoryController = ({ tokens, embeddings3d, attention, nextToken, hiddenStates, tokenData }) => {
+export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention, nextToken, hiddenStates, tokenData }) => {
   const [step, setStep] = useState(0);
   const [layer, setLayer] = useState(0);
 
@@ -46,7 +46,7 @@ export const LLMStoryController = ({ tokens, embeddings3d, attention, nextToken,
       <LLMScene>
         {step === 0 && (
           <TokenizationView
-            sentence={tokens.join(' ')}
+            sentence={inputText}
             tokens={tokens}
             inputIds={tokenData?.input_ids}
           />
