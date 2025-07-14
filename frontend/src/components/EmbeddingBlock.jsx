@@ -1,4 +1,5 @@
 import React from "react";
+import { Text } from "@react-three/drei";
 
 export const EmbeddingBlock = ({ embedding, token, position }) => {
   // Simple visualization: color/size by norm
@@ -10,10 +11,11 @@ export const EmbeddingBlock = ({ embedding, token, position }) => {
         <boxGeometry args={[1.2, 0.6, 0.2]} />
         <meshStandardMaterial color={color} />
       </mesh>
-      <mesh position={[0, 0, 0.21]}>
-        <textGeometry args={[token, { size: 0.2, height: 0.01 }]} />
-        <meshStandardMaterial color="white" />
-      </mesh>
+      <group position={[0, 0, 0.21]}>
+        <Text fontSize={0.2} color="white" anchorX="center" anchorY="middle">
+          {token}
+        </Text>
+      </group>
     </group>
   );
 };

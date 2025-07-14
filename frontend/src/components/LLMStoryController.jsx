@@ -1,6 +1,5 @@
-
-
 import React, { useState } from "react";
+import { Html } from '@react-three/drei';
 import { LLMScene } from "./LLMScene";
 import { TokenBlocks3D } from "./TokenBlocks3D";
 import { TokenizationView } from "./TokenizationView";
@@ -15,21 +14,41 @@ const STORY_STEPS = [
   { name: "Softmax" },
 ];
 
-export const LLMStoryController = ({ tokens, embeddings3d, attention, nextToken, hiddenStates }) => {
+export const LLMStoryController = ({ tokens, embeddings3d, attention, nextToken, hiddenStates, tokenData }) => {
   const [step, setStep] = useState(0);
   const [layer, setLayer] = useState(0);
 
   return (
-    <div style={{ width: "100vw", height: "70vh", position: "relative" }}>
+    <div>
+      {/* Navigation */}
+      <div className="nav-buttons">
+        {STORY_STEPS.map((s, i) => (
+          <button
+            key={s.name}
+            onClick={() => setStep(i)}
+            className={`nav-button ${step === i ? 'active' : 'inactive'}`}
+          >
+            {s.name}
+          </button>
+        ))}
+        {step === 1 && (
+          <span>
+            <span style={{ marginLeft: 10 }}>Layer:</span>
+            <button onClick={() => setLayer(Math.max(0, layer - 1))}>-</button>
+            <span style={{ margin: "0 10px" }}>{layer}</span>
+            <button onClick={() => setLayer(layer + 1)}>+</button>
+          </span>
+        )}
+      </div>
+
+      {/* 3D Scene */}
+      <div className="scene-container">
       <LLMScene>
         {step === 0 && (
           <TokenizationView
             sentence={tokens.join(' ')}
             tokens={tokens}
-            inputIds={Array.isArray(tokens) && tokens.length && typeof tokens[0] === 'string' ? undefined : undefined}
-            tokenTypes={undefined}
-            rawTokenData={tokens}
-            inputIdsRaw={Array.isArray(tokens) && tokens.length && typeof tokens[0] === 'string' ? undefined : undefined}
+            inputIds={tokenData?.input_ids}
           />
         )}
         {step === 1 && (
@@ -50,42 +69,15 @@ export const LLMStoryController = ({ tokens, embeddings3d, attention, nextToken,
           attention && attention.length > 0 ? (
             <AttentionView attention={attention} tokens={tokens} />
           ) : (
-            <div style={{ color: '#f87171' }}>No attention data</div>
+            <Html><div style={{ color: '#f87171' }}>No attention data</div></Html>
           )
         )}
         {step === 3 && nextToken ? (
           <SoftmaxView nextToken={nextToken} />
         ) : step === 3 ? (
-          <div style={{ color: '#f87171' }}>No softmax data</div>
+          <Html><div style={{ color: '#f87171' }}>No softmax data</div></Html>
         ) : null}
       </LLMScene>
-      <div style={{ position: "absolute", top: 10, left: 10, zIndex: 10, background: "rgba(34,34,34,0.8)", borderRadius: 8, padding: 12 }}>
-        {STORY_STEPS.map((s, i) => (
-          <button
-            key={s.name}
-            onClick={() => setStep(i)}
-            style={{
-              marginRight: 10,
-              fontWeight: step === i ? "bold" : "normal",
-              background: step === i ? "#38bdf8" : "#222",
-              color: step === i ? "#fff" : "#38bdf8",
-              borderRadius: 6,
-              padding: "6px 16px",
-              border: "none",
-              cursor: "pointer"
-            }}
-          >
-            {s.name}
-          </button>
-        ))}
-        {step === 1 && (
-          <>
-            <span style={{ marginLeft: 10 }}>Layer:</span>
-            <button onClick={() => setLayer(Math.max(0, layer - 1))}>-</button>
-            <span style={{ margin: "0 10px" }}>{layer}</span>
-            <button onClick={() => setLayer(layer + 1)}>+</button>
-          </>
-        )}
       </div>
     </div>
   );
