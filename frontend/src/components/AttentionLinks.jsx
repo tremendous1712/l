@@ -1,4 +1,35 @@
 import React from "react";
+import { Line } from "@react-three/drei";
+import { useSpring, animated } from "@react-spring/three";
+
+const AnimatedLine = ({ start, end, weight }) => {
+  const { progress } = useSpring({
+    from: { progress: 0 },
+    to: { progress: 1 },
+    config: { duration: 500 },
+  });
+
+  const points = progress.to((p) => {
+    const interpolatedEnd = [
+      start[0] + (end[0] - start[0]) * p,
+      start[1] + (end[1] - start[1]) * p,
+      start[2] + (end[2] - start[2]) * p,
+    ];
+    return [start, interpolatedEnd];
+  });
+
+  return (
+    <animated.group>
+      <Line
+        points={points}
+        color="yellow"
+        lineWidth={3}
+        opacity={weight}
+        transparent
+      />
+    </animated.group>
+  );
+};
 
 export const AttentionLinks = ({ attention, tokens }) => {
   // attention: [layer][head][from][to]
@@ -10,15 +41,11 @@ export const AttentionLinks = ({ attention, tokens }) => {
       {att.map((row, fromIdx) =>
         row.map((weight, toIdx) =>
           weight > 0.2 ? (
-            <line
+            <AnimatedLine
               key={`${fromIdx}-${toIdx}`}
-              geometry={{
-                vertices: [
-                  [fromIdx * 2 - tokens.length, 0, 0.2],
-                  [toIdx * 2 - tokens.length, 0, 0.2],
-                ],
-              }}
-              material={{ color: `rgba(255,255,0,${weight})` }}
+              start={[fromIdx * 2 - tokens.length, 0, 0.2]}
+              end={[toIdx * 2 - tokens.length, 0, 0.2]}
+              weight={weight}
             />
           ) : null
         )

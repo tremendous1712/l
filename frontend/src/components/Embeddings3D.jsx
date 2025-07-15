@@ -140,32 +140,25 @@ const AnimatedVector = ({ startPosition, endPosition, startToken, endToken, colo
 
   return (
     <group>
-      {/* Start point (token sphere) */}
-      <animated.mesh 
-        position={startPos}
-        scale={spring.progress.to(p => Math.max(0.1, p * 0.8))} // Smaller scale
-      >
-        <sphereGeometry args={[0.1, 16, 16]} /> {/* Smaller sphere */}
-        <meshStandardMaterial color={color} />
-      </animated.mesh>
-
       {/* Start token label */}
-      <animated.group position={startPos} scale={spring.progress.to(p => Math.max(0.1, p))}>
-        <Html position={[0, 0.4, 0]}>
-          <div style={{
-            background: "rgba(0,0,0,0.8)",
-            color: color,
-            padding: "4px 8px",
-            borderRadius: "4px",
-            fontSize: "12px",
-            fontWeight: "bold",
-            border: `1px solid ${color}`,
-            whiteSpace: "nowrap"
-          }}>
-            {startToken}
-          </div>
-        </Html>
-      </animated.group>
+      {startToken !== 'Origin' && (
+        <animated.group position={startPos} scale={spring.progress.to(p => Math.max(0.1, p))}>
+          <Html position={[0, 0.4, 0]}>
+            <div style={{
+              background: "rgba(0,0,0,0.8)",
+              color: color,
+              padding: "4px 8px",
+              borderRadius: "4px",
+              fontSize: "12px",
+              fontWeight: "bold",
+              border: `1px solid ${color}`,
+              whiteSpace: "nowrap"
+            }}>
+              {startToken}
+            </div>
+          </Html>
+        </animated.group>
+      )}
 
       {/* Vector line from start to end */}
       <line ref={vectorRef}>
@@ -196,15 +189,6 @@ const AnimatedVector = ({ startPosition, endPosition, startToken, endToken, colo
         </mesh>
       </animated.group>
 
-      {/* End point (token sphere) - only appears when vector is complete */}
-      <animated.mesh 
-        position={endPos}
-        scale={spring.progress.to(p => p >= 0.8 ? (p - 0.8) * 4 : 0)} // Smaller end sphere
-      >
-        <sphereGeometry args={[0.1, 16, 16]} /> {/* Smaller sphere */}
-        <meshStandardMaterial color={color} />
-      </animated.mesh>
-
       {/* End token label - only appears when vector is complete */}
       <animated.group 
         position={endPos} 
@@ -229,163 +213,10 @@ const AnimatedVector = ({ startPosition, endPosition, startToken, endToken, colo
   );
 };
 
-// Matrix representation component to show raw vector values
-const MatrixRepresentation = ({ embeddings, tokens, currentStep }) => {
-  if (!embeddings || !tokens) return null;
-
-  return (
-    <Html position={[0, -2.5, 0]}>
-      <div style={{
-        background: "rgba(0,0,0,0.95)",
-        border: "2px solid #38bdf8",
-        borderRadius: "8px",
-        padding: "15px",
-        color: "white",
-        fontFamily: "monospace",
-        width: "800px",
-        fontSize: "11px"
-      }}>
-        <h4 style={{ 
-          color: "#38bdf8", 
-          margin: "0 0 15px 0", 
-          textAlign: "center",
-          fontSize: "14px"
-        }}>
-          Vector Matrix Representation
-        </h4>
-        
-        {/* Header with tokens */}
-        <div style={{
-          display: "flex",
-          marginBottom: "10px",
-          borderBottom: "1px solid #444",
-          paddingBottom: "8px"
-        }}>
-          <div style={{
-            width: "60px",
-            fontWeight: "bold",
-            color: "#38bdf8",
-            fontSize: "10px",
-            display: "flex",
-            alignItems: "center"
-          }}>
-            Tokens
-          </div>
-          {tokens.slice(0, currentStep + 1).map((token, i) => (
-            <div key={i} style={{
-              flex: "1",
-              textAlign: "center",
-              fontWeight: "bold",
-              color: i === currentStep ? "#fbbf24" : "#e2e8f0",
-              background: i === currentStep ? "rgba(251, 191, 36, 0.1)" : "transparent",
-              padding: "4px 2px",
-              borderRadius: "4px",
-              fontSize: "9px",
-              minWidth: "50px",
-              maxWidth: "80px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap"
-            }}>
-              "{token}"
-            </div>
-          ))}
-        </div>
-
-        {/* Matrix rows - showing first 8 dimensions */}
-        {Array.from({ length: Math.min(8, embeddings[0]?.length || 0) }, (_, dimIndex) => (
-          <div key={dimIndex} style={{
-            display: "flex",
-            marginBottom: "3px",
-            alignItems: "center"
-          }}>
-            <div style={{
-              width: "60px",
-              color: "#38bdf8",
-              fontSize: "10px",
-              fontWeight: "bold"
-            }}>
-              d{dimIndex}
-            </div>
-            {tokens.slice(0, currentStep + 1).map((token, tokenIndex) => {
-              const vector = embeddings[tokenIndex] || [];
-              const value = vector[dimIndex];
-              const isCurrentToken = tokenIndex === currentStep;
-              
-              return (
-                <div key={tokenIndex} style={{
-                  flex: "1",
-                  textAlign: "center",
-                  padding: "3px 2px",
-                  color: isCurrentToken ? "#fbbf24" : "#94a3b8",
-                  background: isCurrentToken ? "rgba(251, 191, 36, 0.05)" : "transparent",
-                  borderRadius: "2px",
-                  fontSize: "9px",
-                  fontFamily: "monospace",
-                  minWidth: "50px",
-                  maxWidth: "80px"
-                }}>
-                  {typeof value === 'number' ? 
-                    (Math.abs(value) >= 0.01 ? value.toFixed(2) : value.toExponential(1)) 
-                    : '0.00'
-                  }
-                </div>
-              );
-            })}
-          </div>
-        ))}
-
-        {/* Show "..." row for remaining dimensions */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          marginTop: "8px",
-          paddingTop: "8px",
-          borderTop: "1px solid #444"
-        }}>
-          <div style={{
-            width: "60px",
-            color: "#64748b",
-            fontSize: "10px"
-          }}>
-            ...
-          </div>
-          {tokens.slice(0, currentStep + 1).map((_, tokenIndex) => (
-            <div key={tokenIndex} style={{
-              flex: "1",
-              textAlign: "center",
-              color: "#64748b",
-              fontSize: "10px",
-              minWidth: "50px",
-              maxWidth: "80px"
-            }}>
-              ...
-            </div>
-          ))}
-        </div>
-
-        {/* Info footer */}
-        <div style={{
-          marginTop: "10px",
-          paddingTop: "8px",
-          borderTop: "1px solid #444",
-          fontSize: "9px",
-          color: "#94a3b8",
-          textAlign: "center"
-        }}>
-          {embeddings[0]?.length || 0}D vectors • Step {currentStep + 1}/{tokens.length} • 
-          <span style={{ color: "#fbbf24" }}> Current: "{tokens[currentStep] || ''}"</span>
-        </div>
-      </div>
-    </Html>
-  );
-};
-
 // Main Embeddings3D component
 export const Embeddings3D = ({ embeddings3d, tokens, layer, step, hiddenStates, sentence }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [showVectors, setShowVectors] = useState(false);
-  const [showMatrix, setShowMatrix] = useState(true);
 
   // Color palette for vectors
   const vectorColors = [
@@ -429,7 +260,7 @@ export const Embeddings3D = ({ embeddings3d, tokens, layer, step, hiddenStates, 
         minZ: Infinity, maxZ: -Infinity 
       });
 
-      // Scale to fit in a 6x6x6 space (bigger than before)
+      // Scale to fit in a 7.5x7.5x7.5 space to maximize usage
       const range = Math.max(
         bounds.maxX - bounds.minX,
         bounds.maxY - bounds.minY,
@@ -437,7 +268,7 @@ export const Embeddings3D = ({ embeddings3d, tokens, layer, step, hiddenStates, 
         1
       );
       
-      const scale = 6 / range;
+      const scale = 7.5 / range;
       const centerX = (bounds.minX + bounds.maxX) / 2;
       const centerY = (bounds.minY + bounds.maxY) / 2;
       const centerZ = (bounds.minZ + bounds.maxZ) / 2;
@@ -512,44 +343,20 @@ export const Embeddings3D = ({ embeddings3d, tokens, layer, step, hiddenStates, 
 
       {/* Token-to-Token Vectors - Sequential appearance */}
       {showVectors && points.map((point, i) => {
-        if (i === 0) {
-          // First token - always show as starting point
-          return (
-            <group key={`origin-${i}`}>
-              <mesh position={point}>
-                <sphereGeometry args={[0.12, 16, 16]} /> {/* Smaller starting sphere */}
-                <meshStandardMaterial color={vectorColors[0]} />
-              </mesh>
-              <Html position={[point[0], point[1] + 0.4, point[2]]}>
-                <div style={{
-                  background: "rgba(0,0,0,0.8)",
-                  color: vectorColors[0],
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  fontSize: "12px",
-                  fontWeight: "bold",
-                  border: `1px solid ${vectorColors[0]}`,
-                  whiteSpace: "nowrap"
-                }}>
-                  {tokens && tokens[i] ? tokens[i] : `T${i}`} (start)
-                </div>
-              </Html>
-            </group>
-          );
-        }
-        
-        // Only show vectors up to current step
         if (i <= currentStep) {
+          const startPos = i === 0 ? [0, 0, 0] : points[i - 1];
+          const startTok = i === 0 ? "Origin" : (tokens && tokens[i - 1] ? tokens[i - 1] : `T${i-1}`);
+          
           return (
             <AnimatedVector
               key={`vector-${i}`}
-              startPosition={points[i - 1]}
+              startPosition={startPos}
               endPosition={point}
-              startToken={tokens && tokens[i - 1] ? tokens[i - 1] : `T${i-1}`}
+              startToken={startTok}
               endToken={tokens && tokens[i] ? tokens[i] : `T${i}`}
               color={vectorColors[i % vectorColors.length]}
-              delay={i - 1}
-              isVisible={true} // Always visible once we reach this step
+              delay={i}
+              isVisible={true}
             />
           );
         }
@@ -568,35 +375,6 @@ export const Embeddings3D = ({ embeddings3d, tokens, layer, step, hiddenStates, 
         }}>
           Vectors: {Math.min(currentStep + 1, points.length)} / {points.length}
         </div>
-      </Html>
-
-      {/* Matrix representation */}
-      {showMatrix && (
-        <MatrixRepresentation 
-          embeddings={embeddings3d || hiddenStates?.[layer]} 
-          tokens={tokens} 
-          currentStep={currentStep}
-        />
-      )}
-
-      {/* Toggle Matrix View Button */}
-      <Html position={[6, -4, 0]}>
-        <button
-          onClick={() => setShowMatrix(!showMatrix)}
-          style={{
-            background: showMatrix ? "#38bdf8" : "rgba(56, 189, 248, 0.3)",
-            color: "white",
-            border: "1px solid #38bdf8",
-            borderRadius: "8px",
-            padding: "10px 16px",
-            fontSize: "12px",
-            cursor: "pointer",
-            fontWeight: "bold",
-            transition: "all 0.3s ease"
-          }}
-        >
-          {showMatrix ? "Hide Matrix" : "Show Matrix"}
-        </button>
       </Html>
     </group>
   );

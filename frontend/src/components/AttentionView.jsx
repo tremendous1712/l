@@ -63,94 +63,98 @@ export const AttentionView = ({ attention, tokens }) => {
   
   return (
     <group position={[0, 0, 0]}>
-      <Html center position={[0, 3, 0]}>
+      <Html center position={[0, -1, 0]}>
         <div style={{ 
-          transform: 'scale(0.8) translateX(-50%)', 
+          transform: 'scale(0.9)', 
           background: 'rgba(17,17,17,0.95)', 
-          padding: '20px', 
-          borderRadius: '12px',
+          padding: '16px', 
+          borderRadius: '10px',
           border: '1px solid rgba(56,189,248,0.2)',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          boxShadow: '0 6px 12px rgba(0,0,0,0.2)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center'
         }}>
-          <div style={{ marginBottom: "1em", textAlign: "center" }}>
+          <div style={{ marginBottom: "1.5em", textAlign: "center" }}>
             <div style={{ 
               color: "#38bdf8", 
               fontWeight: "bold", 
-              fontSize: "1.2em",
-              marginBottom: "0.5em"
+              fontSize: "1.5em",
+              marginBottom: "0.8em"
             }}>
               Attention Heads
             </div>
-            <div style={{ marginBottom: "0.5em" }}>
-              <span style={{ marginRight: 20 }}>
-                <span style={{ color: "#aaa" }}>Layer:</span>
+            <div style={{ marginBottom: "0.8em", display: 'flex', gap: '30px' }}>
+              <span>
+                <span style={{ color: "#aaa", fontSize: '1.1em' }}>Layer:</span>
                 <button 
                   onClick={() => setLayer(Math.max(0, layer - 1))}
                   style={{ 
-                    margin: "0 5px",
+                    margin: "0 8px",
                     background: "#38bdf8",
                     border: "none",
-                    borderRadius: "4px",
-                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    padding: "4px 12px",
                     color: "white",
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    fontSize: '1.1em'
                   }}
                 >
                   -
                 </button>
-                <span style={{ margin: "0 10px", color: "white" }}>{layer}</span>
+                <span style={{ margin: "0 12px", color: "white", fontSize: '1.1em' }}>{layer}</span>
                 <button 
                   onClick={() => setLayer(Math.min(numLayers - 1, layer + 1))}
                   style={{ 
-                    margin: "0 5px",
+                    margin: "0 8px",
                     background: "#38bdf8",
                     border: "none",
-                    borderRadius: "4px",
-                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    padding: "4px 12px",
                     color: "white",
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    fontSize: '1.1em'
                   }}
                 >
                   +
                 </button>
               </span>
               <span>
-                <span style={{ color: "#aaa" }}>Head:</span>
+                <span style={{ color: "#aaa", fontSize: '1.1em' }}>Head:</span>
                 <button 
                   onClick={() => setHead(Math.max(0, head - 1))}
                   style={{ 
-                    margin: "0 5px",
+                    margin: "0 8px",
                     background: "#38bdf8",
                     border: "none",
-                    borderRadius: "4px",
-                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    padding: "4px 12px",
                     color: "white",
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    fontSize: '1.1em'
                   }}
                 >
                   -
                 </button>
-                <span style={{ margin: "0 10px", color: "white" }}>{head}</span>
+                <span style={{ margin: "0 12px", color: "white", fontSize: '1.1em' }}>{head}</span>
                 <button 
                   onClick={() => setHead(Math.min(numHeads - 1, head + 1))}
                   style={{ 
-                    margin: "0 5px",
+                    margin: "0 8px",
                     background: "#38bdf8",
                     border: "none",
-                    borderRadius: "4px",
-                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    padding: "4px 12px",
                     color: "white",
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    fontSize: '1.1em'
                   }}
                 >
                   +
                 </button>
               </span>
             </div>
-            <div style={{ color: "#aaa", fontSize: "0.9em" }}>
+            <div style={{ color: "#aaa", fontSize: "1em" }}>
               Layer {layer}, Head {head} Attention Matrix
             </div>
           </div>

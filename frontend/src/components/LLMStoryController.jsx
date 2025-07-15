@@ -49,6 +49,7 @@ export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention,
             sentence={inputText}
             tokens={tokens}
             inputIds={tokenData?.input_ids}
+            embeddings={hiddenStates?.[0]}
           />
         )}
         {step === 1 && (
