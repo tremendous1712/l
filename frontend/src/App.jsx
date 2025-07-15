@@ -5,6 +5,22 @@ import { LoadingOverlay } from "./components/LoadingOverlay";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import "./App.css";
 
+/**
+ * Main application component for LLM visualization
+ * 
+ * Provides an interactive interface for users to input text and visualize
+ * how a GPT-2 model processes it through tokenization, embeddings, attention,
+ * and softmax prediction stages.
+ * 
+ * Features:
+ * - Text input with real-time analysis
+ * - Parallel API calls for optimal performance
+ * - Automatic retry logic for failed requests
+ * - Keyboard shortcuts (Ctrl+Enter to analyze, Escape to reset)
+ * - Error handling with user feedback
+ * 
+ * @returns {JSX.Element} The main application interface
+ */
 function App() {
   const [inputText, setInputText] = useState("Line 42 : Segmentation Fault. Classic rite of");
   const [tokenData, setTokenData] = useState(null);

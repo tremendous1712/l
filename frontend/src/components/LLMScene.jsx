@@ -2,6 +2,10 @@ import React, { useRef, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, Html } from "@react-three/drei";
 
+/**
+ * Error boundary for React Three Fiber components
+ * Catches and displays 3D rendering errors gracefully
+ */
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -37,6 +41,17 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+/**
+ * Main 3D scene wrapper component
+ * 
+ * Provides the Three.js Canvas with proper lighting, camera controls,
+ * and environment setup for all LLM visualizations. Includes error
+ * boundary for graceful handling of 3D rendering issues.
+ * 
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - 3D components to render
+ * @returns {JSX.Element} Configured Three.js Canvas with controls
+ */
 export const LLMScene = ({ children }) => {
   const cameraRef = useRef();
 

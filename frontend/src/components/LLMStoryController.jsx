@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { Html } from '@react-three/drei';
 import { LLMScene } from "./LLMScene";
-import { TokenBlocks3D } from "./TokenBlocks3D";
+
 import { TokenizationView } from "./TokenizationView";
 import { Embeddings3D } from "./Embeddings3D";
 import { AttentionView } from "./AttentionView";
 import { SoftmaxView } from "./SoftmaxView";
 
+/**
+ * Navigation steps for the LLM visualization story
+ */
 const STORY_STEPS = [
   { name: "Tokenization" },
   { name: "Embeddings" },
@@ -14,6 +17,23 @@ const STORY_STEPS = [
   { name: "Softmax" },
 ];
 
+/**
+ * Main controller component for LLM visualization story
+ * 
+ * Manages navigation between different visualization stages and renders
+ * the appropriate 3D components based on the current step. Handles layer
+ * selection for embeddings visualization.
+ * 
+ * @param {Object} props - Component props
+ * @param {string} props.inputText - Original input text
+ * @param {string[]} props.tokens - Array of tokenized strings
+ * @param {number[][][]} props.embeddings3d - 3D embedding coordinates
+ * @param {number[][][][]} props.attention - Attention weight matrices
+ * @param {Object} props.nextToken - Next token prediction data
+ * @param {number[][][]} props.hiddenStates - Hidden states from all layers
+ * @param {Object} props.tokenData - Raw tokenization data with IDs
+ * @returns {JSX.Element} The LLM story controller interface
+ */
 export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention, nextToken, hiddenStates, tokenData }) => {
   const [step, setStep] = useState(0);
   const [layer, setLayer] = useState(0);

@@ -1,5 +1,15 @@
 import React from "react";
 
+/**
+ * Full-screen loading overlay component
+ * 
+ * Displays a centered loading message with backdrop overlay.
+ * Used during API calls to indicate processing state.
+ * 
+ * @param {Object} props - Component props
+ * @param {string} props.message - Loading message to display (defaults to "Loading...")
+ * @returns {JSX.Element} Full-screen loading overlay
+ */
 export const LoadingOverlay = ({ message }) => (
   <div
     style={{

@@ -2,6 +2,20 @@ import React, { useState, useEffect } from "react";
 import { Html } from "@react-three/drei";
 import { useSpring, animated } from "@react-spring/three";
 
+/**
+ * 3D visualization of softmax probability distribution
+ * 
+ * Displays next token predictions as animated 3D bars, showing the
+ * probability distribution over potential next tokens. Features animated
+ * bar scaling and probability labels.
+ * 
+ * @param {Object} props - Component props
+ * @param {Object} props.nextToken - Next token prediction data
+ * @param {string} props.nextToken.token - Predicted token
+ * @param {number} props.nextToken.token_id - Token ID
+ * @param {Array} props.nextToken.probs - Array of {token, prob} objects
+ * @returns {JSX.Element} 3D softmax probability visualization
+ */
 export const SoftmaxView = ({ nextToken }) => {
   const [showBars, setShowBars] = useState(false);
   

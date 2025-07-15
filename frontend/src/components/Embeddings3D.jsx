@@ -4,7 +4,11 @@ import { useFrame } from "@react-three/fiber";
 import { animated, useSpring } from "@react-spring/three";
 import * as THREE from "three";
 
-// Validate and format a point to ensure it's a valid 3D coordinate
+/**
+ * Validate and format a point to ensure it's a valid 3D coordinate
+ * @param {number[]} point - Input point array
+ * @returns {number[]} Valid 3D coordinate [x, y, z]
+ */
 const validatePoint = (point) => {
   if (!Array.isArray(point)) {
     console.warn("Invalid point format:", point);
@@ -13,7 +17,12 @@ const validatePoint = (point) => {
   return point.slice(0, 3).map(v => Number.isFinite(v) ? v : 0);
 };
 
-// Simple PCA implementation for dimensionality reduction
+/**
+ * Simple PCA implementation for dimensionality reduction
+ * @param {number[][]} data - Input data matrix
+ * @param {number} n_components - Number of components to keep (default: 3)
+ * @returns {number[][]} Reduced dimensionality data
+ */
 function pca(data, n_components = 3) {
   if (!data || !Array.isArray(data) || data.length === 0) return [];
   const X = data;
@@ -24,7 +33,16 @@ function pca(data, n_components = 3) {
   return centered.map(row => row.slice(0, n_components));
 }
 
-// 3D Coordinate System with proper axes
+/**
+ * 3D Coordinate System component with labeled axes
+ * 
+ * Renders X (red), Y (green), and Z (blue) axes with directional arrows
+ * and labels, plus an origin point.
+ * 
+ * @param {Object} props - Component props
+ * @param {number} props.size - Length of each axis (default: 8)
+ * @returns {JSX.Element} 3D coordinate system
+ */
 const CoordinateSystem = ({ size = 8 }) => {
   return (
     <group>
@@ -79,7 +97,22 @@ const CoordinateSystem = ({ size = 8 }) => {
   );
 };
 
-// Animated Vector component that draws from one token to the next
+/**
+ * Animated vector component connecting tokens in 3D space
+ * 
+ * Draws an animated vector from one position to another with labels,
+ * representing the sequential flow of tokens through embedding space.
+ * 
+ * @param {Object} props - Component props
+ * @param {number[]} props.startPosition - Start position [x, y, z]
+ * @param {number[]} props.endPosition - End position [x, y, z]
+ * @param {string} props.startToken - Label for start position
+ * @param {string} props.endToken - Label for end position
+ * @param {string} props.color - Vector color
+ * @param {number} props.delay - Animation delay multiplier
+ * @param {boolean} props.isVisible - Whether vector should be visible
+ * @returns {JSX.Element} Animated vector with labels
+ */
 const AnimatedVector = ({ startPosition, endPosition, startToken, endToken, color, delay = 0, isVisible = false }) => {
   const vectorRef = useRef();
   
@@ -213,7 +246,29 @@ const AnimatedVector = ({ startPosition, endPosition, startToken, endToken, colo
   );
 };
 
-// Main Embeddings3D component
+/**
+ * Main 3D embeddings visualization component
+ * 
+ * Displays token embeddings as vectors in 3D space with sequential animation.
+ * Handles PCA dimensionality reduction, coordinate system rendering, and
+ * step-by-step vector appearance with proper scaling.
+ * 
+ * Features:
+ * - Automatic scaling to maximize 3D space usage
+ * - Sequential vector animation with delays
+ * - Color-coded vectors for different tokens
+ * - Origin-based first vector positioning
+ * - Progress indicator
+ * 
+ * @param {Object} props - Component props
+ * @param {number[][][]} props.embeddings3d - 3D embedding coordinates
+ * @param {string[]} props.tokens - Token strings for labeling
+ * @param {number} props.layer - Current layer index
+ * @param {number} props.step - Current animation step
+ * @param {number[][][]} props.hiddenStates - Raw hidden states for PCA
+ * @param {string} props.sentence - Input sentence for triggering animation reset
+ * @returns {JSX.Element} 3D embeddings visualization
+ */
 export const Embeddings3D = ({ embeddings3d, tokens, layer, step, hiddenStates, sentence }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [showVectors, setShowVectors] = useState(false);

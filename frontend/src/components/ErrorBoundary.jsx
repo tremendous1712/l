@@ -1,5 +1,15 @@
 import React from "react";
 
+/**
+ * React Error Boundary component for graceful error handling
+ * 
+ * Catches JavaScript errors anywhere in the child component tree,
+ * logs the errors, and displays a fallback UI instead of crashing
+ * the entire application.
+ * 
+ * @class ErrorBoundary
+ * @extends {React.Component}
+ */
 export class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);

@@ -2,6 +2,20 @@ import React, { useEffect, useState } from "react";
 import { Html } from "@react-three/drei";
 import { useSpring, animated, useTrail } from "@react-spring/web";
 
+/**
+ * Individual token flow component showing token -> ID -> embedding pipeline
+ * 
+ * Displays a single token's journey through the tokenization process with
+ * animated arrows and embedding vector preview.
+ * 
+ * @param {Object} props - Component props
+ * @param {string} props.token - Token string
+ * @param {number} props.tokenId - Unique token ID
+ * @param {number[]} props.embedding - Embedding vector (first 8 dimensions shown)
+ * @param {string} props.color - Display color for the token
+ * @param {Object} props.style - React Spring animation style
+ * @returns {JSX.Element} Token flow visualization
+ */
 const TokenFlow = ({ token, tokenId, embedding, color, style }) => {
   const embeddingSnippet = embedding ? embedding.slice(0, 8) : [];
 
@@ -103,6 +117,24 @@ const TokenFlow = ({ token, tokenId, embedding, color, style }) => {
   );
 };
 
+/**
+ * Main tokenization visualization component
+ * 
+ * Provides a multi-stage animated visualization of text tokenization:
+ * 1. Typing animation of input text
+ * 2. Inline highlighting of individual tokens
+ * 3. Vertical flow showing token -> ID -> embedding pipeline
+ * 
+ * Features animated arrows, scrollable content, and embedding vector previews
+ * formatted as n×1 matrices.
+ * 
+ * @param {Object} props - Component props
+ * @param {string} props.sentence - Input sentence to tokenize
+ * @param {string[]} props.tokens - Array of token strings
+ * @param {number[]} props.inputIds - Array of token IDs
+ * @param {number[][]} props.embeddings - Embedding vectors for each token
+ * @returns {JSX.Element} Complete tokenization visualization
+ */
 export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => {
   const defaultSentence = "Line 42 : Segmentation Fault. Classic rite of";
   const actualSentence = sentence || defaultSentence;

@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import { Html } from "@react-three/drei";
 
-// Simple heatmap rendering for attention weights
+/**
+ * Renders attention weights as a heatmap table
+ * 
+ * @param {number[][]} matrix - Attention weight matrix
+ * @param {string[]} tokens - Token labels for rows/columns
+ * @returns {JSX.Element} HTML table with color-coded attention weights
+ */
 function renderHeatmap(matrix, tokens) {
   return (
     <table style={{ 
@@ -45,6 +51,18 @@ function renderHeatmap(matrix, tokens) {
   );
 }
 
+/**
+ * Interactive attention visualization component
+ * 
+ * Displays attention weight matrices as interactive heatmaps with controls
+ * for navigating between different layers and attention heads. Shows how
+ * tokens attend to each other within the transformer model.
+ * 
+ * @param {Object} props - Component props
+ * @param {number[][][][]} props.attention - Attention weights [layer][head][from][to]
+ * @param {string[]} props.tokens - Token strings for labeling
+ * @returns {JSX.Element} Interactive attention heatmap with controls
+ */
 export const AttentionView = ({ attention, tokens }) => {
   const [layer, setLayer] = useState(0);
   const [head, setHead] = useState(0);

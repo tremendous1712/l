@@ -1,3 +1,15 @@
+"""
+FastAPI backend for LLM visualization
+
+Provides REST API endpoints for GPT-2 model analysis including:
+- Text tokenization
+- Embedding extraction
+- Attention weight computation
+- Next token prediction
+
+Uses transformers library with GPT-2 model and sklearn for PCA.
+"""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware  # ✅ CORS
 from pydantic import BaseModel
@@ -7,7 +19,7 @@ from sklearn.decomposition import PCA
 import numpy as np
 
 
-app = FastAPI()
+app = FastAPI(title="LLM Visualization API", version="1.0.0")
 
 # ✅ Allow frontend (React @ localhost:5173) to make API calls
 app.add_middleware(
@@ -33,11 +45,21 @@ except Exception as e:
 
 
 class TextInput(BaseModel):
+    """Request model for text input endpoints"""
     text: str
 
 
 @app.post("/tokenize")
 def tokenize_text(input: TextInput):
+    """
+    Tokenize input text using GPT-2 tokenizer
+    
+    Args:
+        input: TextInput object containing text to tokenize
+        
+    Returns:
+        dict: Contains input_ids, cleaned tokens, and attention_mask
+    """
     if tokenizer is None:
         print("/tokenize error: tokenizer not loaded")
         return {"input_ids": [], "tokens": [], "attention_mask": []}
@@ -73,6 +95,15 @@ def tokenize_text(input: TextInput):
 
 @app.post("/next_token")
 def next_token_prediction(input: TextInput):
+    """
+    Predict next token using GPT-2 model
+    
+    Args:
+        input: TextInput object containing text for prediction
+        
+    Returns:
+        dict: Contains predicted token, token_id, probability, and top 10 probabilities
+    """
     if tokenizer is None or model is None:
         print("/next_token error: model/tokenizer not loaded")
         return {"token": "", "token_id": -1, "probability": 0.0, "probs": []}
@@ -118,6 +149,15 @@ def next_token_prediction(input: TextInput):
 
 @app.post("/attention")
 def get_attention(input: TextInput):
+    """
+    Extract attention weights from GPT-2 model
+    
+    Args:
+        input: TextInput object containing text to analyze
+        
+    Returns:
+        dict: Contains number of layers and attention matrices for all layers/heads
+    """
     if tokenizer is None or model is None:
         print("/attention error: model/tokenizer not loaded")
         return {"num_layers": 0, "attentions": []}
@@ -137,6 +177,15 @@ def get_attention(input: TextInput):
 
 @app.post("/embeddings")
 def get_embeddings(input: TextInput):
+    """
+    Extract hidden states and compute 3D embeddings using PCA
+    
+    Args:
+        input: TextInput object containing text to analyze
+        
+    Returns:
+        dict: Contains hidden states from all layers and 3D PCA embeddings
+    """
     if tokenizer is None or model is None:
         print("/embeddings error: model/tokenizer not loaded")
         return {"num_layers": 0, "hidden_states": [], "embeddings3d": []}
@@ -169,4 +218,5 @@ def get_embeddings(input: TextInput):
 
 @app.get("/health")
 def health_check():
+    """Health check endpoint for API status"""
     return {"status": "ok", "model": "gpt2"}
