@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Html } from '@react-three/drei';
 import { LLMScene } from "./LLMScene";
 
-import { TokenizationView } from "./TokenizationView";
+import { TokenizationView } from "./TokenizationViewWeb";
 import { Embeddings3D } from "./Embeddings3D";
 import { AttentionView } from "./AttentionView";
 import { SoftmaxView } from "./SoftmaxView";
@@ -61,45 +61,51 @@ export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention,
         )}
       </div>
 
-      {/* 3D Scene */}
-      <div className="scene-container">
-      <LLMScene>
-        {step === 0 && (
+      {/* Tokenization View - Normal DOM Layout */}
+      {step === 0 && (
+        <div className="tokenization-container">
           <TokenizationView
             sentence={inputText}
             tokens={tokens}
             inputIds={tokenData?.input_ids}
             embeddings={hiddenStates?.[0]}
           />
-        )}
-        {step === 1 && (
-          (embeddings3d && embeddings3d.length > 0 && embeddings3d[layer]) || (hiddenStates && hiddenStates[layer]) ? (
-            <Embeddings3D
-              embeddings3d={embeddings3d}
-              tokens={tokens}
-              layer={layer}
-              step={step}
-              hiddenStates={hiddenStates}
-              sentence={tokens.join(' ')}
-            />
-          ) : (
-            <group><mesh><boxGeometry args={[2,1,0.2]} /><meshStandardMaterial color="#f87171" /></mesh></group>
-          )
-        )}
-        {step === 2 && (
-          attention && attention.length > 0 ? (
-            <AttentionView attention={attention} tokens={tokens} />
-          ) : (
-            <Html><div style={{ color: '#f87171' }}>No attention data</div></Html>
-          )
-        )}
-        {step === 3 && nextToken ? (
-          <SoftmaxView nextToken={nextToken} />
-        ) : step === 3 ? (
-          <Html><div style={{ color: '#f87171' }}>No softmax data</div></Html>
-        ) : null}
-      </LLMScene>
-      </div>
+        </div>
+      )}
+
+      {/* 3D Scene - Only for 3D visualizations */}
+      {step !== 0 && (
+        <div className="scene-container">
+          <LLMScene>
+            {step === 1 && (
+              (embeddings3d && embeddings3d.length > 0 && embeddings3d[layer]) || (hiddenStates && hiddenStates[layer]) ? (
+                <Embeddings3D
+                  embeddings3d={embeddings3d}
+                  tokens={tokens}
+                  layer={layer}
+                  step={step}
+                  hiddenStates={hiddenStates}
+                  sentence={tokens.join(' ')}
+                />
+              ) : (
+                <group><mesh><boxGeometry args={[2,1,0.2]} /><meshStandardMaterial color="#f87171" /></mesh></group>
+              )
+            )}
+            {step === 2 && (
+              attention && attention.length > 0 ? (
+                <AttentionView attention={attention} tokens={tokens} />
+              ) : (
+                <Html><div style={{ color: '#f87171' }}>No attention data</div></Html>
+              )
+            )}
+            {step === 3 && nextToken ? (
+              <SoftmaxView nextToken={nextToken} />
+            ) : step === 3 ? (
+              <Html><div style={{ color: '#f87171' }}>No softmax data</div></Html>
+            ) : null}
+          </LLMScene>
+        </div>
+      )}
     </div>
   );
 };
