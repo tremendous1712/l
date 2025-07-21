@@ -193,8 +193,7 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
         </div>
 
         {/* Text Display Section */}
-        <animated.div style={{
-          ...textSpring,
+        <div style={{
           textAlign: 'center',
           marginBottom: currentPhase === 'tokenized' ? '40px' : '80px',
           minHeight: '120px',
@@ -211,40 +210,51 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
             padding: '20px',
             backgroundColor: '#1f2937',
             borderRadius: '12px',
-            border: '2px solid #374151'
+            border: '2px solid #374151',
+            minHeight: '120px',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}>
-            {currentPhase === 'typing' && (
-              <span>
-                {typedText}
-                <span style={{ 
-                  animation: 'blink 1s infinite', 
-                  marginLeft: '2px',
-                  color: '#60a5fa'
-                }}>|</span>
-              </span>
-            )}
-            {currentPhase === 'parsing' && renderSentenceWithHighlights()}
-            {currentPhase === 'tokenized' && (
-              <div style={{ fontSize: '0.9em' }}>
-                {tokens.map((token, i) => (
-                  <span key={i} style={{
-                    backgroundColor: tokenColors[i % tokenColors.length],
-                    color: "white",
-                    padding: "6px 12px",
-                    borderRadius: "8px",
-                    margin: '4px',
-                    display: 'inline-block',
-                    fontWeight: 'bold',
-                    transform: 'scale(1)',
-                    transition: 'all 0.5s ease'
-                  }}>
-                    {token}
-                  </span>
-                ))}
-              </div>
-            )}
+            <animated.div style={{
+              ...textSpring,
+              width: '100%',
+              textAlign: 'center'
+            }}>
+              {currentPhase === 'typing' && (
+                <span>
+                  {typedText}
+                  <span style={{ 
+                    animation: 'blink 1s infinite', 
+                    marginLeft: '2px',
+                    color: '#60a5fa'
+                  }}>|</span>
+                </span>
+              )}
+              {currentPhase === 'parsing' && renderSentenceWithHighlights()}
+              {currentPhase === 'tokenized' && (
+                <div style={{ fontSize: '0.9em' }}>
+                  {tokens.map((token, i) => (
+                    <span key={i} style={{
+                      backgroundColor: tokenColors[i % tokenColors.length],
+                      color: "white",
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      margin: '4px',
+                      display: 'inline-block',
+                      fontWeight: 'bold',
+                      transform: 'scale(1)',
+                      transition: 'all 0.5s ease'
+                    }}>
+                      {token}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </animated.div>
           </div>
-        </animated.div>
+        </div>
 
         {/* Transition Bridge Section */}
         {currentPhase === 'tokenized' && (
