@@ -231,7 +231,7 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
                   block: 'center'
                 });
               }
-            }, 1000);
+            }, 2000); // Increased delay for smoother transition
             setTimeout(() => {
               setFlowStep(2);
               // Scroll to IDs when they appear
@@ -241,10 +241,10 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
                   block: 'center'
                 });
               }
-            }, 2500);
+            }, 3500);
             setTimeout(() => {
               setFlowStep(3);
-            }, 4000);
+            }, 5000);
             setTimeout(() => {
               setFlowStep(4);
               // Scroll to embeddings when they appear
@@ -254,7 +254,7 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
                   block: 'center'
                 });
               }
-            }, 5500);
+            }, 6500);
           }, 1000);
         }
       }, 200);
@@ -339,12 +339,13 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
         <animated.div style={{
           ...textSpring,
           textAlign: 'center',
-          marginBottom: '80px',
+          marginBottom: currentPhase === 'tokenized' ? '40px' : '80px',
           minHeight: '120px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '0 40px'
+          padding: '0 40px',
+          transition: 'margin-bottom 0.8s ease'
         }}>
           <div style={{
             fontSize: '1.8em',
@@ -376,7 +377,9 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
                     borderRadius: "8px",
                     margin: '4px',
                     display: 'inline-block',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    transform: 'scale(1)',
+                    transition: 'all 0.5s ease'
                   }}>
                     {token}
                   </span>
@@ -386,17 +389,50 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
           </div>
         </animated.div>
 
+        {/* Transition Bridge Section */}
+        {currentPhase === 'tokenized' && (
+          <div style={{
+            textAlign: 'center',
+            marginBottom: '40px',
+            opacity: flowStep >= 0 ? 1 : 0,
+            transform: flowStep >= 0 ? 'translateY(0)' : 'translateY(20px)',
+            transition: 'all 0.8s ease'
+          }}>
+            <div style={{
+              fontSize: '1.4em',
+              color: '#60a5fa',
+              marginBottom: '20px',
+              fontWeight: 'bold'
+            }}>
+              ↓
+            </div>
+            <p style={{
+              fontSize: '1.2em',
+              color: '#9ca3af',
+              marginBottom: '0'
+            }}>
+              Now let's see how each token flows through the pipeline
+            </p>
+          </div>
+        )}
+
         {/* Token Flow Section with Animation */}
         {currentPhase === 'tokenized' && tokens && tokens.length > 0 && (
           <div className="token-flow-section" style={{
             marginBottom: '40px',
-            padding: '0 40px'
+            padding: '0 40px',
+            opacity: flowStep >= 0 ? 1 : 0,
+            transform: flowStep >= 0 ? 'translateY(0)' : 'translateY(30px)',
+            transition: 'all 1s ease 0.5s'
           }}>
             <h3 style={{
               textAlign: 'center',
               marginBottom: '50px',
               color: '#60a5fa',
-              fontSize: '2.2em'
+              fontSize: '2.2em',
+              opacity: flowStep >= 0 ? 1 : 0,
+              transform: flowStep >= 0 ? 'scale(1)' : 'scale(0.95)',
+              transition: 'all 0.8s ease 0.8s'
             }}>
               Token → ID → Embedding Flow
             </h3>
@@ -408,7 +444,9 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
               background: '#0f172a',
               borderRadius: '16px',
               border: '2px solid #1e293b',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              transform: flowStep >= 0 ? 'scale(1)' : 'scale(0.98)',
+              transition: 'all 0.8s ease 1s'
             }}>
               <div style={{
                 display: 'flex',
@@ -425,7 +463,10 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
                     alignItems: 'center',
                     minWidth: '180px',
                     fontFamily: 'monospace',
-                    position: 'relative'
+                    position: 'relative',
+                    opacity: flowStep >= 0 ? 1 : 0,
+                    transform: flowStep >= 0 ? 'translateY(0)' : 'translateY(20px)',
+                    transition: `all 0.6s ease ${1.2 + index * 0.1}s`
                   }}>
                       {/* Token */}
                       <div 
@@ -441,7 +482,8 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
                           border: '2px solid rgba(255,255,255,0.2)',
                           textAlign: 'center',
                           minWidth: '90px',
-                          transition: 'all 0.5s ease'
+                          transition: 'all 0.5s ease',
+                          boxShadow: flowStep >= 0 ? '0 4px 8px rgba(0,0,0,0.3)' : 'none'
                         }}>
                         {token}
                       </div>                    {/* Animated Flow Line 1 - With Drawing Effect */}
