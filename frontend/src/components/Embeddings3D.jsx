@@ -336,25 +336,17 @@ const RotatingContainer = ({ children, shouldRotate = false }) => {
   
   useFrame((state) => {
     if (groupRef.current && shouldRotate) {
-      // Record start time only once when rotation begins
       if (rotationStartTimeRef.current === null) {
         rotationStartTimeRef.current = state.clock.elapsedTime;
-        // Ensure we start at 0 rotation
         groupRef.current.rotation.y = 0;
       }
       
-      // Calculate time since rotation started
       const timeSinceStart = state.clock.elapsedTime - rotationStartTimeRef.current;
+      const maxAngle = (45 * Math.PI) / 180;
       
-      // Smooth oscillation between 0 and +45 degrees, starting from 0
-      const maxAngle = (45 * Math.PI) / 180; // 45 degrees in radians
-      
-      // Simple sine wave that starts at 0 and goes to 1: (1 - cos(x)) / 2
-      // This starts at 0 when x=0, peaks at 1 when x=π, back to 0 at x=2π
-      const angle = (1 - Math.cos(timeSinceStart * 0.1)) / 2; // 0 to 1, starts at 0
+      const angle = (1 - Math.cos(timeSinceStart * 0.1)) / 2;
       groupRef.current.rotation.y = angle * maxAngle;
     } else if (!shouldRotate) {
-      // Reset rotation start time and position when rotation is disabled
       rotationStartTimeRef.current = null;
       if (groupRef.current) {
         groupRef.current.rotation.y = 0;
