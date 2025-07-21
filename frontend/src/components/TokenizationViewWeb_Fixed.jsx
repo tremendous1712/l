@@ -157,11 +157,6 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
   const [highlightedTokens, setHighlightedTokens] = useState([]);
   const [flowStep, setFlowStep] = useState(0); // 0: tokens, 1: flowing to IDs, 2: IDs, 3: flowing to embeddings, 4: embeddings
 
-  // Refs for scrolling to each step
-  const tokenStepRef = React.useRef(null);
-  const idStepRef = React.useRef(null);
-  const embeddingStepRef = React.useRef(null);
-
   // Debug info
   console.log('TokenizationView Data:', {
     sentence,
@@ -210,7 +205,7 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
     }
   }, [sentence, currentPhase]);
 
-  // Handle parsing phase and start flow animation
+  // Handle parsing phase and start flow animation with auto scroll
   useEffect(() => {
     if (currentPhase === 'parsing' && tokens) {
       let tokenIndex = 0;
@@ -221,40 +216,34 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
           clearInterval(timer);
           setTimeout(() => {
             setCurrentPhase('tokenized');
-            // Start the flow animation sequence with auto-scrolling
+            // Auto scroll to flow section
+            const flowSection = document.querySelector('.token-flow-section');
+            if (flowSection) {
+              flowSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            // Start the flow animation sequence
             setTimeout(() => {
               setFlowStep(1);
-              // Scroll to tokens when arrow starts drawing
-              if (tokenStepRef.current) {
-                tokenStepRef.current.scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'center'
-                });
+              // Scroll to focus on tokens->IDs flow
+              const tokenSection = document.querySelector('.tokens-section');
+              if (tokenSection) {
+                tokenSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }
-            }, 2000); // Increased delay for smoother transition
+            }, 1000);
             setTimeout(() => {
               setFlowStep(2);
-              // Scroll to IDs when they appear
-              if (idStepRef.current) {
-                idStepRef.current.scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'center'
-                });
-              }
-            }, 3500);
+            }, 2000);
             setTimeout(() => {
               setFlowStep(3);
-            }, 5000);
+              // Scroll to focus on IDs->embeddings flow
+              const embeddingSection = document.querySelector('.embeddings-section');
+              if (embeddingSection) {
+                embeddingSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }, 3000);
             setTimeout(() => {
               setFlowStep(4);
-              // Scroll to embeddings when they appear
-              if (embeddingStepRef.current) {
-                embeddingStepRef.current.scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'center'
-                });
-              }
-            }, 6500);
+            }, 4000);
           }, 1000);
         }
       }, 200);
@@ -307,7 +296,8 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
         padding: '40px 0',
         backgroundColor: '#111827',
         color: '#ffffff',
-        minHeight: '100vh',
+        height: '100vh',
+        overflowY: 'scroll',
         fontFamily: 'monospace'
       }}>
         {/* Header Section */}
@@ -331,7 +321,7 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
             margin: '0 auto',
             lineHeight: '1.6'
           }}>
-            Watch how your input text gets broken down into tokens, converted to IDs, and mapped to embedding vectors.
+            Watch how your input text gets broken down into tokens, converted to IDs, and mapped to embedding vectors
           </p>
         </div>
 
@@ -339,13 +329,12 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
         <animated.div style={{
           ...textSpring,
           textAlign: 'center',
-          marginBottom: currentPhase === 'tokenized' ? '40px' : '80px',
+          marginBottom: '80px',
           minHeight: '120px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '0 40px',
-          transition: 'margin-bottom 0.8s ease'
+          padding: '0 40px'
         }}>
           <div style={{
             fontSize: '1.8em',
@@ -377,9 +366,7 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
                     borderRadius: "8px",
                     margin: '4px',
                     display: 'inline-block',
-                    fontWeight: 'bold',
-                    transform: 'scale(1)',
-                    transition: 'all 0.5s ease'
+                    fontWeight: 'bold'
                   }}>
                     {token}
                   </span>
@@ -389,50 +376,17 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
           </div>
         </animated.div>
 
-        {/* Transition Bridge Section */}
-        {currentPhase === 'tokenized' && (
-          <div style={{
-            textAlign: 'center',
-            marginBottom: '40px',
-            opacity: flowStep >= 0 ? 1 : 0,
-            transform: flowStep >= 0 ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'all 0.8s ease'
-          }}>
-            <div style={{
-              fontSize: '1.4em',
-              color: '#60a5fa',
-              marginBottom: '20px',
-              fontWeight: 'bold'
-            }}>
-              ↓
-            </div>
-            <p style={{
-              fontSize: '1.2em',
-              color: '#9ca3af',
-              marginBottom: '0'
-            }}>
-              Now let's see how each token flows through the pipeline
-            </p>
-          </div>
-        )}
-
         {/* Token Flow Section with Animation */}
         {currentPhase === 'tokenized' && tokens && tokens.length > 0 && (
           <div className="token-flow-section" style={{
             marginBottom: '40px',
-            padding: '0 40px',
-            opacity: flowStep >= 0 ? 1 : 0,
-            transform: flowStep >= 0 ? 'translateY(0)' : 'translateY(30px)',
-            transition: 'all 1s ease 0.5s'
+            padding: '0 40px'
           }}>
             <h3 style={{
               textAlign: 'center',
               marginBottom: '50px',
               color: '#60a5fa',
-              fontSize: '2.2em',
-              opacity: flowStep >= 0 ? 1 : 0,
-              transform: flowStep >= 0 ? 'scale(1)' : 'scale(0.95)',
-              transition: 'all 0.8s ease 0.8s'
+              fontSize: '2.2em'
             }}>
               Token → ID → Embedding Flow
             </h3>
@@ -440,61 +394,54 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
             {/* Animated Pipeline - Full Width */}
             <div style={{
               width: '100%',
+              overflowX: 'auto',
               padding: '40px 20px',
               background: '#0f172a',
               borderRadius: '16px',
               border: '2px solid #1e293b',
-              boxSizing: 'border-box',
-              transform: flowStep >= 0 ? 'scale(1)' : 'scale(0.98)',
-              transition: 'all 0.8s ease 1s'
+              boxSizing: 'border-box'
             }}>
               <div style={{
                 display: 'flex',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
                 padding: '0',
                 gap: '30px',
-                width: '100%'
+                width: 'max-content',
+                minWidth: '100%'
               }}>
-                {tokens.slice(0, 5).map((token, index) => (
+                {tokens.map((token, index) => (
                   <div key={index} className={`token-column ${index < 3 ? 'tokens-section' : index >= tokens.length - 3 ? 'embeddings-section' : ''}`} style={{
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    minWidth: '180px',
+                    minWidth: '140px',
                     fontFamily: 'monospace',
-                    position: 'relative',
-                    opacity: flowStep >= 0 ? 1 : 0,
-                    transform: flowStep >= 0 ? 'translateY(0)' : 'translateY(20px)',
-                    transition: `all 0.6s ease ${1.2 + index * 0.1}s`
+                    position: 'relative'
                   }}>
-                      {/* Token */}
-                      <div 
-                        ref={index === 2 ? tokenStepRef : null}
-                        style={{
-                          background: tokenColors[index % tokenColors.length],
-                          color: 'white',
-                          padding: '12px 18px',
-                          borderRadius: '8px',
-                          fontWeight: 'bold',
-                          fontSize: '1.3em',
-                          marginBottom: '20px',
-                          border: '2px solid rgba(255,255,255,0.2)',
-                          textAlign: 'center',
-                          minWidth: '90px',
-                          transition: 'all 0.5s ease',
-                          boxShadow: flowStep >= 0 ? '0 4px 8px rgba(0,0,0,0.3)' : 'none'
-                        }}>
-                        {token}
-                      </div>                    {/* Animated Flow Line 1 - With Drawing Effect */}
+                    {/* Token */}
+                    <div style={{
+                      background: tokenColors[index % tokenColors.length],
+                      color: 'white',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      fontWeight: 'bold',
+                      fontSize: '1.1em',
+                      marginBottom: '15px',
+                      border: '2px solid rgba(255,255,255,0.2)',
+                      textAlign: 'center',
+                      minWidth: '80px',
+                      transition: 'all 0.5s ease'
+                    }}>
+                      {token}
+                    </div>
+
+                    {/* Animated Flow Line 1 - Longer */}
                     <div style={{
                       width: '3px',
-                      height: flowStep >= 1 ? '60px' : '0px',
+                      height: '60px',
                       background: flowStep >= 1 ? '#60a5fa' : '#6b7280',
                       marginBottom: '15px',
                       position: 'relative',
-                      transition: 'height 1.5s ease-out, background 0.5s ease',
-                      animation: flowStep === 1 ? 'drawArrow 1.5s ease-out' : 'none'
+                      transition: 'all 0.5s ease'
                     }}>
                       {/* Flowing particle */}
                       {flowStep === 1 && (
@@ -517,39 +464,35 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
                         height: '8px',
                         background: flowStep >= 1 ? '#60a5fa' : '#6b7280',
                         transform: 'rotate(45deg)',
-                        transition: 'all 0.5s ease',
-                        opacity: flowStep >= 1 ? 1 : 0
+                        transition: 'all 0.5s ease'
                       }} />
                     </div>
 
                     {/* Token ID */}
-                    <div 
-                      ref={index === 2 ? idStepRef : null}
-                      style={{
-                        background: flowStep >= 2 ? '#374151' : '#2d3748',
-                        color: flowStep >= 2 ? '#d1d5db' : '#6b7280',
-                        padding: '14px 16px',
-                        borderRadius: '6px',
-                        fontSize: '1.2em',
-                        marginBottom: '20px',
-                        border: `1px solid ${flowStep >= 2 ? '#4b5563' : '#374151'}`,
-                        textAlign: 'center',
-                        minWidth: '110px',
-                        transform: flowStep >= 2 ? 'scale(1)' : 'scale(0.8)',
-                        transition: 'all 0.5s ease'
-                      }}>
+                    <div style={{
+                      background: flowStep >= 2 ? '#374151' : '#2d3748',
+                      color: flowStep >= 2 ? '#d1d5db' : '#6b7280',
+                      padding: '6px 10px',
+                      borderRadius: '4px',
+                      fontSize: '0.9em',
+                      marginBottom: '15px',
+                      border: `1px solid ${flowStep >= 2 ? '#4b5563' : '#374151'}`,
+                      textAlign: 'center',
+                      minWidth: '60px',
+                      transform: flowStep >= 2 ? 'scale(1)' : 'scale(0.8)',
+                      transition: 'all 0.5s ease'
+                    }}>
                       ID: {inputIds && inputIds[index] ? inputIds[index] : 'N/A'}
                     </div>
 
-                    {/* Animated Flow Line 2 - With Drawing Effect */}
+                    {/* Animated Flow Line 2 - Longer */}
                     <div style={{
                       width: '3px',
-                      height: flowStep >= 3 ? '60px' : '0px',
+                      height: '60px',
                       background: flowStep >= 3 ? '#60a5fa' : '#6b7280',
                       marginBottom: '15px',
                       position: 'relative',
-                      transition: 'height 1.5s ease-out, background 0.5s ease',
-                      animation: flowStep === 3 ? 'drawArrow 1.5s ease-out' : 'none'
+                      transition: 'all 0.5s ease'
                     }}>
                       {/* Flowing particle */}
                       {flowStep === 3 && (
@@ -572,98 +515,79 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
                         height: '8px',
                         background: flowStep >= 3 ? '#60a5fa' : '#6b7280',
                         transform: 'rotate(45deg)',
-                        transition: 'all 0.5s ease',
-                        opacity: flowStep >= 3 ? 1 : 0
+                        transition: 'all 0.5s ease'
                       }} />
                     </div>
 
                     {/* Embedding */}
-                    <div 
-                      ref={index === 2 ? embeddingStepRef : null}
-                      style={{
-                        background: flowStep >= 4 ? '#1f2937' : 'transparent',
-                        color: flowStep >= 4 ? '#9ca3af' : 'transparent',
-                        padding: '16px',
-                        borderRadius: '6px',
-                        fontSize: '1.1em',
-                        border: `1px solid ${flowStep >= 4 ? '#374151' : 'transparent'}`,
-                        textAlign: 'center',
-                        maxWidth: '160px',
-                        minHeight: '115px',
-                        transform: flowStep >= 4 ? 'scale(1)' : 'scale(0.8)',
-                        transition: 'all 0.5s ease',
-                        opacity: flowStep >= 4 ? 1 : 0
-                      }}>
+                    <div style={{
+                      background: flowStep >= 4 ? '#1f2937' : '#111827',
+                      color: flowStep >= 4 ? '#9ca3af' : '#4b5563',
+                      padding: '8px',
+                      borderRadius: '4px',
+                      fontSize: '0.8em',
+                      border: `1px solid ${flowStep >= 4 ? '#374151' : '#1f2937'}`,
+                      textAlign: 'center',
+                      maxWidth: '120px',
+                      transform: flowStep >= 4 ? 'scale(1)' : 'scale(0.8)',
+                      transition: 'all 0.5s ease'
+                    }}>
                       <div style={{ 
-                        color: flowStep >= 4 ? '#60a5fa' : 'transparent', 
+                        color: flowStep >= 4 ? '#60a5fa' : '#4b5563', 
                         fontWeight: 'bold', 
-                        marginBottom: '8px',
-                        fontSize: '1.15em',
+                        marginBottom: '4px',
+                        fontSize: '0.9em',
                         transition: 'all 0.5s ease'
                       }}>
                         Embedding
                       </div>
-                      {flowStep >= 4 ? (
-                        embeddings && embeddings[index] ? (
-                          <div style={{ lineHeight: '1.3' }}>
-                            <div style={{ 
-                              fontSize: '0.85em',
-                              color: '#d1d5db',
-                              marginBottom: '2px'
-                            }}>
-                              [
-                            </div>
-                            {/* First 3 values */}
-                            {embeddings[index].slice(0, 3).map((val, i) => (
-                              <div key={i} style={{ 
-                                fontSize: '0.75em',
-                                color: '#ffffff',
-                                paddingLeft: '8px'
-                              }}>
-                                {val.toFixed(2)},
-                              </div>
-                            ))}
-                            {/* Ellipsis */}
-                            <div style={{ 
-                              color: '#6b7280', 
-                              fontSize: '0.7em',
+                      {embeddings && embeddings[index] && flowStep >= 4 ? (
+                        <div style={{ lineHeight: '1.2' }}>
+                          <div style={{ 
+                            fontSize: '0.75em',
+                            color: '#d1d5db',
+                            marginBottom: '2px'
+                          }}>
+                            [
+                          </div>
+                          {/* First 3 values */}
+                          {embeddings[index].slice(0, 3).map((val, i) => (
+                            <div key={i} style={{ 
+                              fontSize: '0.75em',
+                              color: '#ffffff',
                               paddingLeft: '8px'
                             }}>
-                              ...
+                              {val.toFixed(2)},
                             </div>
-                            {/* Last 2 values */}
-                            {embeddings[index].slice(-2).map((val, i) => (
-                              <div key={`last-${i}`} style={{ 
-                                fontSize: '0.75em',
-                                color: '#ffffff',
-                                paddingLeft: '8px'
-                              }}>
-                                {val.toFixed(2)}{i === 1 ? '' : ','}
-                              </div>
-                            ))}
-                            <div style={{ 
-                              fontSize: '0.75em',
-                              color: '#d1d5db'
-                            }}>
-                              ]
-                            </div>
-                          </div>
-                        ) : (
+                          ))}
+                          {/* Ellipsis */}
                           <div style={{ 
                             color: '#6b7280', 
-                            fontSize: '0.9em',
-                            fontStyle: 'italic'
+                            fontSize: '0.7em',
+                            paddingLeft: '8px'
                           }}>
-                            No data
+                            ...
                           </div>
-                        )
+                          {/* Last 2 values */}
+                          {embeddings[index].slice(-2).map((val, i) => (
+                            <div key={`last-${i}`} style={{ 
+                              fontSize: '0.75em',
+                              color: '#ffffff',
+                              paddingLeft: '8px'
+                            }}>
+                              {val.toFixed(2)}{i === 1 ? '' : ','}
+                            </div>
+                          ))}
+                          <div style={{ 
+                            fontSize: '0.75em',
+                            color: '#d1d5db'
+                          }}>
+                            ]
+                          </div>
+                        </div>
                       ) : (
-                        <div style={{ 
-                          color: 'transparent', 
-                          fontSize: '0.9em',
-                          fontStyle: 'italic'
-                        }}>
-                          Loading...
+                        <div style={{ color: '#6b7280', fontSize: '0.75em' }}>
+                          {flowStep >= 4 ? 'Loading...' : '---'}
                         </div>
                       )}
                     </div>
@@ -709,68 +633,26 @@ export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => 
           }
         }
         
-        @keyframes drawArrow {
-          0% {
-            height: 0px;
-          }
-          100% {
-            height: 60px;
-          }
+        /* Normal vertical scrollbar */
+        .tokenization-web-view {
+          scrollbar-width: auto;
         }
         
-        /* Main site scrollbar */
-        html {
-          overflow-x: hidden;
-          overflow-y: auto;
+        .tokenization-web-view::-webkit-scrollbar {
+          width: 12px;
         }
         
-        body {
-          overflow-x: hidden;
-          overflow-y: auto;
-          margin: 0;
-          padding: 0;
-        }
-        
-        body::-webkit-scrollbar {
-          width: 16px;
-        }
-        
-        body::-webkit-scrollbar-track {
-          background: #111827;
-        }
-        
-        body::-webkit-scrollbar-thumb {
+        .tokenization-web-view::-webkit-scrollbar-track {
           background: #374151;
-          border-radius: 8px;
-          border: 2px solid #111827;
         }
         
-        body::-webkit-scrollbar-thumb:hover {
-          background: #4b5563;
+        .tokenization-web-view::-webkit-scrollbar-thumb {
+          background: #6b7280;
+          border-radius: 6px;
         }
         
-        /* Root element scrollbar */
-        #root {
-          overflow-x: hidden;
-          overflow-y: auto;
-        }
-        
-        #root::-webkit-scrollbar {
-          width: 16px;
-        }
-        
-        #root::-webkit-scrollbar-track {
-          background: #111827;
-        }
-        
-        #root::-webkit-scrollbar-thumb {
-          background: #374151;
-          border-radius: 8px;
-          border: 2px solid #111827;
-        }
-        
-        #root::-webkit-scrollbar-thumb:hover {
-          background: #4b5563;
+        .tokenization-web-view::-webkit-scrollbar-thumb:hover {
+          background: #9ca3af;
         }
       `}</style>
     </>
