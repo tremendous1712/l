@@ -12,7 +12,7 @@ import { SoftmaxView } from "./SoftmaxView";
  */
 const STORY_STEPS = [
   { name: "Tokenization" },
-  { name: "Embeddings" },
+  { name: "Embeddings - 3D" },
   { name: "Attention" },
   { name: "Softmax" },
 ];
@@ -21,8 +21,7 @@ const STORY_STEPS = [
  * Main controller component for LLM visualization story
  * 
  * Manages navigation between different visualization stages and renders
- * the appropriate 3D components based on the current step. Handles layer
- * selection for embeddings visualization.
+ * the appropriate 3D components based on the current step.
  * 
  * @param {Object} props - Component props
  * @param {string} props.inputText - Original input text
@@ -30,13 +29,12 @@ const STORY_STEPS = [
  * @param {number[][][]} props.embeddings3d - 3D embedding coordinates
  * @param {number[][][][]} props.attention - Attention weight matrices
  * @param {Object} props.nextToken - Next token prediction data
- * @param {number[][][]} props.hiddenStates - Hidden states from all layers
+ * @param {number[][][]} props.hiddenStates - Hidden states for processing
  * @param {Object} props.tokenData - Raw tokenization data with IDs
  * @returns {JSX.Element} The LLM story controller interface
  */
 export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention, nextToken, hiddenStates, tokenData }) => {
   const [step, setStep] = useState(0);
-  const [layer, setLayer] = useState(0);
 
   return (
     <div>
@@ -51,14 +49,6 @@ export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention,
             {s.name}
           </button>
         ))}
-        {step === 1 && (
-          <span>
-            <span style={{ marginLeft: 10 }}>Layer:</span>
-            <button onClick={() => setLayer(Math.max(0, layer - 1))}>-</button>
-            <span style={{ margin: "0 10px" }}>{layer}</span>
-            <button onClick={() => setLayer(layer + 1)}>+</button>
-          </span>
-        )}
       </div>
 
       {/* Tokenization View - Normal DOM Layout */}
@@ -78,11 +68,10 @@ export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention,
         <div className="scene-container">
           <LLMScene>
             {step === 1 && (
-              (embeddings3d && embeddings3d.length > 0 && embeddings3d[layer]) || (hiddenStates && hiddenStates[layer]) ? (
+              embeddings3d || hiddenStates ? (
                 <Embeddings3D
                   embeddings3d={embeddings3d}
                   tokens={tokens}
-                  layer={layer}
                   step={step}
                   hiddenStates={hiddenStates}
                   sentence={tokens.join(' ')}

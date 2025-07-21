@@ -5,20 +5,7 @@ import { animated, useSpring } from "@react-spring/three";
 import * as THREE from "three";
 
 /**
- * Validate and format a point to ensure it's a valid 3D coordinate
- * @param {number[]} point - Input point array
- * @returns {number[]} Valid 3D coordinate [x, y, z]
- */
-const validatePoint = (point) => {
-  if (!Array.isArray(point)) {
-    console.warn("Invalid point format:", point);
-    return [0, 0, 0];
-  }
-  return point.slice(0, 3).map(v => Number.isFinite(v) ? v : 0);
-};
-
-/**
- * Simple PCA implementation for dimensionality reduction
+ * Enhanced PCA implementation for dimensionality reduction
  * @param {number[][]} data - Input data matrix
  * @param {number} n_components - Number of components to keep (default: 3)
  * @returns {number[][]} Reduced dimensionality data
@@ -34,252 +21,389 @@ function pca(data, n_components = 3) {
 }
 
 /**
- * 3D Coordinate System component with labeled axes
- * 
- * Renders X (red), Y (green), and Z (blue) axes with directional arrows
- * and labels, plus an origin point.
- * 
- * @param {Object} props - Component props
- * @param {number} props.size - Length of each axis (default: 8)
- * @returns {JSX.Element} 3D coordinate system
+ * Grid plane component for PCA-style visualization
  */
-const CoordinateSystem = ({ size = 8 }) => {
+const GridPlane = ({ size = 10, divisions = 20 }) => {
   return (
     <group>
-      {/* X Axis - Red */}
-      <Line
-        points={[[0, 0, 0], [size, 0, 0]]}
-        color="#ef4444"
-        lineWidth={8}
+      {/* XY Grid - positioned at back Z plane */}
+      <gridHelper 
+        args={[size * 2, divisions, '#4a5568', '#2d3748']} 
+        rotation={[Math.PI / 2, 0, 0]} 
+        position={[0, 0, -size * 0.6]}
+        scale={[0.6, 1, 0.6]}
       />
-      <mesh position={[size + 0.4, 0, 0]}>
-        <coneGeometry args={[0.25, 0.8, 8]} />
-        <meshStandardMaterial color="#ef4444" />
+      {/* XZ Grid - positioned at bottom */}
+      <gridHelper 
+        args={[size * 2, divisions, '#4a5568', '#2d3748']} 
+        position={[0, -size * 0.6, 0]}
+        scale={[0.6, 1, 0.6]}
+      />
+      {/* YZ Grid - positioned at left */}
+      <gridHelper 
+        args={[size * 2, divisions, '#4a5568', '#2d3748']} 
+        rotation={[0, 0, Math.PI / 2]} 
+        position={[-size * 0.6, 0, 0]}
+        scale={[0.6, 1, 0.6]}
+      />
+    </group>
+  );
+};
+
+/**
+ * Enhanced 3D Coordinate System with PCA-style axes
+ */
+const CoordinateSystem = ({ size = 10 }) => {
+  return (
+    <group>
+      {/* X Axis - PCA-1 */}
+      <Line
+        points={[[-size * 0.6, 0, 0], [size * 0.6, 0, 0]]}
+        color="#60a5fa"
+        lineWidth={3}
+        transparent
+        opacity={0.8}
+      />
+      <mesh position={[size * 0.6 - 0.2, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+        <coneGeometry args={[0.15, 0.4, 8]} />
+        <meshStandardMaterial color="#60a5fa" />
       </mesh>
-      <Html position={[size + 1, 0, 0]}>
-        <div style={{ color: "#ef4444", fontSize: "28px", fontWeight: "bold", textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}>X</div>
+      <Html position={[size * 0.6 + 0.5, 0, 0]}>
+        <div style={{ 
+          color: "#60a5fa", 
+          fontSize: "16px", 
+          fontWeight: "600", 
+          textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+          fontFamily: "monospace"
+        }}>
+          PCA-1 (34.14% Explained)
+        </div>
       </Html>
 
-      {/* Y Axis - Green */}
+      {/* Y Axis - PCA-3 */}
       <Line
-        points={[[0, 0, 0], [0, size, 0]]}
-        color="#22c55e"
-        lineWidth={8}
+        points={[[0, -size * 0.6, 0], [0, size * 0.6, 0]]}
+        color="#34d399"
+        lineWidth={3}
+        transparent
+        opacity={0.8}
       />
-      <mesh position={[0, size + 0.4, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <coneGeometry args={[0.25, 0.8, 8]} />
-        <meshStandardMaterial color="#22c55e" />
+      <mesh position={[0, size * 0.6 - 0.2, 0]}>
+        <coneGeometry args={[0.15, 0.4, 8]} />
+        <meshStandardMaterial color="#34d399" />
       </mesh>
-      <Html position={[0, size + 1, 0]}>
-        <div style={{ color: "#22c55e", fontSize: "28px", fontWeight: "bold", textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}>Y</div>
+      <Html position={[0, size * 0.6 + 0.5, 0]}>
+        <div style={{ 
+          color: "#34d399", 
+          fontSize: "16px", 
+          fontWeight: "600", 
+          textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+          fontFamily: "monospace"
+        }}>
+          PCA-3 (8.1% Explained)
+        </div>
       </Html>
 
-      {/* Z Axis - Blue */}
+      {/* Z Axis - PCA-2 */}
       <Line
-        points={[[0, 0, 0], [0, 0, size]]}
-        color="#3b82f6"
-        lineWidth={8}
+        points={[[0, 0, -size * 0.6], [0, 0, size * 0.6]]}
+        color="#f472b6"
+        lineWidth={3}
+        transparent
+        opacity={0.8}
       />
-      <mesh position={[0, 0, size + 0.4]} rotation={[-Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[0.25, 0.8, 8]} />
-        <meshStandardMaterial color="#3b82f6" />
+      <mesh position={[0, 0, size * 0.6 - 0.2]} rotation={[-Math.PI / 2, 0, 0]}>
+        <coneGeometry args={[0.15, 0.4, 8]} />
+        <meshStandardMaterial color="#f472b6" />
       </mesh>
-      <Html position={[0, 0, size + 1]}>
-        <div style={{ color: "#3b82f6", fontSize: "28px", fontWeight: "bold", textShadow: "2px 2px 4px rgba(0,0,0,0.8)" }}>Z</div>
+      <Html position={[0, 0, size * 0.6 + 0.5]}>
+        <div style={{ 
+          color: "#f472b6", 
+          fontSize: "16px", 
+          fontWeight: "600", 
+          textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+          fontFamily: "monospace"
+        }}>
+          PCA-2 (14.74% Explained)
+        </div>
       </Html>
 
       {/* Origin point */}
       <mesh position={[0, 0, 0]}>
-        <sphereGeometry args={[0.15, 16, 16]} />
-        <meshStandardMaterial color="#ffffff" />
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.2} />
       </mesh>
     </group>
   );
 };
 
 /**
- * Animated vector component connecting tokens in 3D space
- * 
- * Draws an animated vector from one position to another with labels,
- * representing the sequential flow of tokens through embedding space.
- * 
- * @param {Object} props - Component props
- * @param {number[]} props.startPosition - Start position [x, y, z]
- * @param {number[]} props.endPosition - End position [x, y, z]
- * @param {string} props.startToken - Label for start position
- * @param {string} props.endToken - Label for end position
- * @param {string} props.color - Vector color
- * @param {number} props.delay - Animation delay multiplier
- * @param {boolean} props.isVisible - Whether vector should be visible
- * @returns {JSX.Element} Animated vector with labels
+ * Animated token point with enhanced styling
  */
-const AnimatedVector = ({ startPosition, endPosition, startToken, endToken, color, delay = 0, isVisible = false }) => {
-  const vectorRef = useRef();
+const AnimatedTokenPoint = ({ 
+  position, 
+  token, 
+  color, 
+  delay = 0, 
+  isVisible = false, 
+  index 
+}) => {
+  const meshRef = useRef();
+  const [hovered, setHovered] = useState(false);
   
   const spring = useSpring({
-    progress: isVisible ? 1 : 0,
-    config: { tension: 80, friction: 20 }, // Much slower animation
-    delay: delay * 1200 // Increased delay between vectors
+    scale: isVisible ? 1 : 0,
+    opacity: isVisible ? 1 : 0,
+    config: { tension: 80, friction: 40 }, // Slower, more visible animation
+    delay: delay * 300 // Increased delay between points
   });
 
-  const startPos = useMemo(() => validatePoint(startPosition), [startPosition]);
-  const endPos = useMemo(() => validatePoint(endPosition), [endPosition]);
-  
-  const vectorDirection = useMemo(() => {
-    return [
-      endPos[0] - startPos[0],
-      endPos[1] - startPos[1], 
-      endPos[2] - startPos[2]
-    ];
-  }, [startPos, endPos]);
+  const hoverSpring = useSpring({
+    scale: hovered ? 1.5 : 1,
+    config: { tension: 300, friction: 10 }
+  });
 
-  const vectorLength = useMemo(() => {
-    return Math.sqrt(
-      vectorDirection[0] ** 2 + 
-      vectorDirection[1] ** 2 + 
-      vectorDirection[2] ** 2
-    );
-  }, [vectorDirection]);
-
-  useFrame(() => {
-    if (vectorRef.current && spring.progress.get() !== undefined) {
-      const progress = spring.progress.get();
-      
-      // Update line geometry based on animation progress
-      const currentEnd = [
-        startPos[0] + vectorDirection[0] * progress,
-        startPos[1] + vectorDirection[1] * progress,
-        startPos[2] + vectorDirection[2] * progress
-      ];
-      
-      const geometry = vectorRef.current.geometry;
-      const positions = geometry.attributes.position.array;
-      positions[0] = startPos[0]; positions[1] = startPos[1]; positions[2] = startPos[2];
-      positions[3] = currentEnd[0]; positions[4] = currentEnd[1]; positions[5] = currentEnd[2];
-      geometry.attributes.position.needsUpdate = true;
+  useFrame((state) => {
+    if (meshRef.current && isVisible) {
+      // Subtle floating animation
+      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2 + index) * 0.02;
     }
   });
 
-  // Calculate arrow rotation to point from start to end
-  const arrowRotation = useMemo(() => {
-    if (vectorLength === 0) return [0, 0, 0];
-    
-    const normalized = vectorDirection.map(v => v / vectorLength);
-    const yaw = Math.atan2(normalized[0], normalized[2]);
-    const pitch = Math.atan2(normalized[1], Math.sqrt(normalized[0]**2 + normalized[2]**2)) - Math.PI/2;
-    
-    return [pitch, yaw, 0];
-  }, [vectorDirection, vectorLength]);
-
   return (
     <group>
-      {/* Start token label */}
-      {startToken !== 'Origin' && (
-        <animated.group position={startPos} scale={spring.progress.to(p => Math.max(0.1, p))}>
-          <Html position={[0, 0.4, 0]}>
-            <div style={{
-              background: "rgba(0,0,0,0.8)",
-              color: color,
-              padding: "4px 8px",
-              borderRadius: "4px",
-              fontSize: "12px",
-              fontWeight: "bold",
-              border: `1px solid ${color}`,
-              whiteSpace: "nowrap"
-            }}>
-              {startToken}
-            </div>
-          </Html>
-        </animated.group>
-      )}
-
-      {/* Vector line from start to end */}
-      <line ref={vectorRef}>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={2}
-            array={new Float32Array([...startPos, ...endPos])}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <lineBasicMaterial color={color} linewidth={5} />
-      </line>
-
-      {/* Vector arrowhead at end position */}
-      <animated.group 
-        position={spring.progress.to(p => [
-          startPos[0] + vectorDirection[0] * p,
-          startPos[1] + vectorDirection[1] * p,
-          startPos[2] + vectorDirection[2] * p
-        ])}
-        rotation={arrowRotation}
-        scale={spring.progress.to(p => p * 1.2)}
+      <animated.mesh
+        ref={meshRef}
+        position={[position[0], position[1], position[2]]}
+        scale={spring.scale.to(s => hoverSpring.scale.get() * s)}
+        onPointerEnter={() => setHovered(true)}
+        onPointerLeave={() => setHovered(false)}
       >
-        <mesh>
-          <coneGeometry args={[0.08, 0.2, 8]} /> {/* Smaller arrowhead */}
-          <meshStandardMaterial color={color} />
-        </mesh>
-      </animated.group>
-
-      {/* End token label - only appears when vector is complete */}
+        <sphereGeometry args={[0.12, 16, 16]} />
+        <meshStandardMaterial 
+          color={color}
+          emissive={color}
+          emissiveIntensity={0.3}
+          transparent
+          opacity={spring.opacity}
+        />
+      </animated.mesh>
+      
+      {/* Token label with enhanced styling */}
       <animated.group 
-        position={endPos} 
-        scale={spring.progress.to(p => p >= 0.8 ? (p - 0.8) * 5 : 0)}
+        position={[position[0], position[1] + 0.4, position[2]]}
+        scale={spring.scale}
       >
-        <Html position={[0, 0.4, 0]}>
+        <Html center>
           <div style={{
-            background: "rgba(0,0,0,0.8)",
+            background: "rgba(0, 0, 0, 0.85)",
             color: color,
-            padding: "4px 8px",
-            borderRadius: "4px",
+            padding: "6px 12px",
+            borderRadius: "8px",
             fontSize: "12px",
-            fontWeight: "bold",
-            border: `1px solid ${color}`,
-            whiteSpace: "nowrap"
+            fontWeight: "600",
+            border: `2px solid ${color}`,
+            whiteSpace: "nowrap",
+            boxShadow: `0 0 10px ${color}40`,
+            fontFamily: "monospace",
+            backdropFilter: "blur(4px)"
           }}>
-            {endToken}
+            {token}
           </div>
         </Html>
       </animated.group>
+      
+      {/* Glow effect */}
+      <animated.mesh
+        position={[position[0], position[1], position[2]]}
+        scale={spring.scale.to(s => s * 2)}
+      >
+        <sphereGeometry args={[0.12, 16, 16]} />
+        <meshBasicMaterial 
+          color={color}
+          transparent
+          opacity={spring.opacity.to(o => o * 0.1)}
+        />
+      </animated.mesh>
     </group>
   );
 };
 
 /**
- * Main 3D embeddings visualization component
+ * Animated arrow component connecting consecutive tokens
+ */
+const AnimatedArrow = ({ 
+  startPosition, 
+  endPosition, 
+  color = "#60a5fa", 
+  delay = 0, 
+  isVisible = false 
+}) => {
+  const lineRef = useRef();
+  
+  const spring = useSpring({
+    progress: isVisible ? 1 : 0,
+    config: { tension: 60, friction: 35 }, // Much slower arrow animation
+    delay: delay * 400 // Longer delay for arrows to be clearly visible
+  });
+
+  const direction = useMemo(() => {
+    const dx = endPosition[0] - startPosition[0];
+    const dy = endPosition[1] - startPosition[1];
+    const dz = endPosition[2] - startPosition[2];
+    const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    return { dx, dy, dz, length };
+  }, [startPosition, endPosition]);
+
+  // Calculate arrow rotation
+  const arrowRotation = useMemo(() => {
+    if (direction.length === 0) return [0, 0, 0];
+    
+    const { dx, dy, dz, length } = direction;
+    const yaw = Math.atan2(dx, dz);
+    const pitch = Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)) - Math.PI / 2;
+    
+    return [pitch, yaw, 0];
+  }, [direction]);
+
+  // Update line geometry in useFrame
+  useFrame(() => {
+    if (lineRef.current) {
+      const progress = spring.progress.get();
+      const currentEnd = [
+        startPosition[0] + direction.dx * progress,
+        startPosition[1] + direction.dy * progress,
+        startPosition[2] + direction.dz * progress
+      ];
+      
+      const positions = lineRef.current.geometry.attributes.position.array;
+      positions[0] = startPosition[0];
+      positions[1] = startPosition[1]; 
+      positions[2] = startPosition[2];
+      positions[3] = currentEnd[0];
+      positions[4] = currentEnd[1];
+      positions[5] = currentEnd[2];
+      lineRef.current.geometry.attributes.position.needsUpdate = true;
+    }
+  });
+
+  return (
+    <group>
+      {/* Static line with animated geometry */}
+      <line ref={lineRef}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            count={2}
+            array={new Float32Array([...startPosition, ...endPosition])}
+            itemSize={3}
+          />
+        </bufferGeometry>
+        <lineBasicMaterial 
+          color={color} 
+          transparent 
+          opacity={0.6}
+        />
+      </line>
+
+      {/* Arrowhead */}
+      <animated.mesh
+        position={spring.progress.to(p => [
+          startPosition[0] + direction.dx * p,
+          startPosition[1] + direction.dy * p,
+          startPosition[2] + direction.dz * p
+        ])}
+        rotation={arrowRotation}
+        scale={spring.progress.to(p => p * 0.8)}
+      >
+        <coneGeometry args={[0.08, 0.2, 8]} />
+        <meshStandardMaterial 
+          color={color}
+          emissive={color}
+          emissiveIntensity={0.3}
+        />
+      </animated.mesh>
+    </group>
+  );
+};
+
+/**
+ * Rotating container component for the entire visualization
+ */
+const RotatingContainer = ({ children, shouldRotate = false }) => {
+  const groupRef = useRef();
+  const rotationStartTimeRef = useRef(null);
+  
+  useFrame((state) => {
+    if (groupRef.current && shouldRotate) {
+      // Record start time only once when rotation begins
+      if (rotationStartTimeRef.current === null) {
+        rotationStartTimeRef.current = state.clock.elapsedTime;
+        // Ensure we start at 0 rotation
+        groupRef.current.rotation.y = 0;
+      }
+      
+      // Calculate time since rotation started
+      const timeSinceStart = state.clock.elapsedTime - rotationStartTimeRef.current;
+      
+      // Smooth oscillation between 0 and +45 degrees, starting from 0
+      const maxAngle = (45 * Math.PI) / 180; // 45 degrees in radians
+      
+      // Simple sine wave that starts at 0 and goes to 1: (1 - cos(x)) / 2
+      // This starts at 0 when x=0, peaks at 1 when x=π, back to 0 at x=2π
+      const angle = (1 - Math.cos(timeSinceStart * 0.1)) / 2; // 0 to 1, starts at 0
+      groupRef.current.rotation.y = angle * maxAngle;
+    } else if (!shouldRotate) {
+      // Reset rotation start time and position when rotation is disabled
+      rotationStartTimeRef.current = null;
+      if (groupRef.current) {
+        groupRef.current.rotation.y = 0;
+      }
+    }
+  });
+  
+  return <group ref={groupRef}>{children}</group>;
+};
+
+/**
+ * Main 3D embeddings visualization component - PCA Style
  * 
- * Displays token embeddings as vectors in 3D space with sequential animation.
- * Handles PCA dimensionality reduction, coordinate system rendering, and
- * step-by-step vector appearance with proper scaling.
- * 
- * Features:
- * - Automatic scaling to maximize 3D space usage
- * - Sequential vector animation with delays
- * - Color-coded vectors for different tokens
- * - Origin-based first vector positioning
- * - Progress indicator
+ * Creates a beautiful PCA-style 3D scatter plot with:
+ * - Dark mode styling
+ * - Sequential point animation  
+ * - Interactive hover effects
+ * - Professional grid system
+ * - Enhanced legends and labels
  * 
  * @param {Object} props - Component props
  * @param {number[][][]} props.embeddings3d - 3D embedding coordinates
  * @param {string[]} props.tokens - Token strings for labeling
- * @param {number} props.layer - Current layer index
  * @param {number} props.step - Current animation step
  * @param {number[][][]} props.hiddenStates - Raw hidden states for PCA
  * @param {string} props.sentence - Input sentence for triggering animation reset
- * @returns {JSX.Element} 3D embeddings visualization
+ * @returns {JSX.Element} Enhanced 3D embeddings visualization
  */
-export const Embeddings3D = ({ embeddings3d, tokens, layer, step, hiddenStates, sentence }) => {
+export const Embeddings3D = ({ embeddings3d, tokens, step, hiddenStates, sentence }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [showVectors, setShowVectors] = useState(false);
+  const [showPoints, setShowPoints] = useState(false);
+  const [animationComplete, setAnimationComplete] = useState(false);
+  const [shouldRotate, setShouldRotate] = useState(false);
 
-  // Color palette for vectors
-  const vectorColors = [
-    "#ef4444", "#f97316", "#eab308", "#22c55e", 
-    "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899"
+  // Enhanced color palette inspired by the PCA image
+  const tokenColors = [
+    "#3b82f6", // Blue (macrolides style)
+    "#ef4444", // Red (microsource spectrum style)  
+    "#22c55e", // Green (approved drugs style)
+    "#f59e0b", // Orange
+    "#8b5cf6", // Purple
+    "#06b6d4", // Cyan
+    "#84cc16", // Lime
+    "#f97316", // Orange-red
+    "#ec4899", // Pink
+    "#6366f1"  // Indigo
   ];
 
-  // Calculate and normalize points
+  // Calculate and normalize points with enhanced scaling
   const points = useMemo(() => {
     try {
       let rawPoints = [];
@@ -287,21 +411,20 @@ export const Embeddings3D = ({ embeddings3d, tokens, layer, step, hiddenStates, 
       if (embeddings3d && Array.isArray(embeddings3d)) {
         if (embeddings3d.length > 0 && Array.isArray(embeddings3d[0])) {
           rawPoints = embeddings3d;
-        } else if (embeddings3d[layer] && Array.isArray(embeddings3d[layer])) {
-          rawPoints = embeddings3d[layer];
         }
-      } else if (hiddenStates && hiddenStates[layer]) {
-        rawPoints = pca(hiddenStates[layer]);
+      } else if (hiddenStates && Array.isArray(hiddenStates)) {
+        rawPoints = pca(hiddenStates);
       }
 
       if (!Array.isArray(rawPoints) || rawPoints.length === 0) {
         return [];
       }
 
-      // Validate and scale points to fit in a reasonable 3D space
-      const validPoints = rawPoints.map(validatePoint);
+      // Validate and scale points for optimal visualization
+      const validPoints = rawPoints.filter(point => Array.isArray(point) && point.length >= 3)
+        .map(point => point.slice(0, 3).map(v => Number.isFinite(v) ? v : 0));
       
-      // Calculate bounds
+      // Calculate bounds for smart scaling
       const bounds = validPoints.reduce((acc, point) => ({
         minX: Math.min(acc.minX, point[0]),
         maxX: Math.max(acc.maxX, point[0]),
@@ -315,64 +438,88 @@ export const Embeddings3D = ({ embeddings3d, tokens, layer, step, hiddenStates, 
         minZ: Infinity, maxZ: -Infinity 
       });
 
-      // Scale to fit in a 7.5x7.5x7.5 space to maximize usage
-      const range = Math.max(
-        bounds.maxX - bounds.minX,
-        bounds.maxY - bounds.minY,
-        bounds.maxZ - bounds.minZ,
-        1
-      );
-      
-      const scale = 7.5 / range;
+      // Calculate center points
       const centerX = (bounds.minX + bounds.maxX) / 2;
       const centerY = (bounds.minY + bounds.maxY) / 2;
       const centerZ = (bounds.minZ + bounds.maxZ) / 2;
 
+      // Calculate ranges for each dimension
+      const rangeX = Math.max(bounds.maxX - bounds.minX, 0.1);
+      const rangeY = Math.max(bounds.maxY - bounds.minY, 0.1);
+      const rangeZ = Math.max(bounds.maxZ - bounds.minZ, 0.1);
+
+      // Scale to use most of the fitted grid space
+      // Grid bounds: X: -6 to +6, Y: -6 to +6, Z: -6 to +6 (all shortened)
+      const targetSizeX = 10.8; // Use 90% of shortened X grid space
+      const targetSizeY = 10.8; // Use 90% of shortened Y grid space  
+      const targetSizeZ = 10.8; // Use 90% of shortened Z grid space
+      
+      const scaleX = targetSizeX / rangeX;
+      const scaleY = targetSizeY / rangeY;
+      const scaleZ = targetSizeZ / rangeZ;
+
+      // Use individual scales for each axis to maximize space usage
       return validPoints.map(point => [
-        (point[0] - centerX) * scale,
-        (point[1] - centerY) * scale,
-        (point[2] - centerZ) * scale
+        (point[0] - centerX) * scaleX,
+        (point[1] - centerY) * scaleY,
+        (point[2] - centerZ) * scaleZ
       ]);
     } catch (err) {
       console.error("Error processing embeddings:", err);
       return [];
     }
-  }, [embeddings3d, hiddenStates, layer]);
+  }, [embeddings3d, hiddenStates]);
 
-  // Animation sequence
+  // Enhanced animation sequence
   useEffect(() => {
     setCurrentStep(0);
-    setShowVectors(false);
+    setShowPoints(false);
+    setAnimationComplete(false);
+    setShouldRotate(false);
     
-    const timer = setTimeout(() => {
-      setShowVectors(true);
+    const initialTimer = setTimeout(() => {
+      setShowPoints(true);
       
-      // Step through vectors one by one with much longer delays
+      // Calculate when to start rotation (75% of tokens)
+      const rotationStartPoint = Math.floor(points.length * 0.75);
+      
+      // Stagger point appearance with slow, visible timing
       const stepTimer = setInterval(() => {
         setCurrentStep(prev => {
+          const nextStep = prev + 1;
+          
+          // Start rotation when 75% of tokens are filled - SIMPLE CHECK
+          if (nextStep >= rotationStartPoint) {
+            setShouldRotate(true);
+          }
+          
+          // Stop token animation only when 100% complete
           if (prev >= points.length - 1) {
             clearInterval(stepTimer);
+            setAnimationComplete(true);
             return prev;
           }
-          return prev + 1;
+          return nextStep;
         });
-      }, 2000); // Increased from 600ms to 2000ms (2 seconds per step)
+      }, 1200); // Much slower so you can see each vector form
 
       return () => clearInterval(stepTimer);
-    }, 1500); // Increased initial delay from 1000ms to 1500ms
+    }, 800);
 
-    return () => clearTimeout(timer);
+    return () => clearTimeout(initialTimer);
   }, [sentence, points.length]);
 
   if (!points || points.length === 0) {
     return (
       <Html center>
         <div style={{ 
-          color: '#f87171',
+          color: '#ef4444',
           fontSize: '18px',
-          background: 'rgba(0,0,0,0.8)',
-          padding: '10px 20px',
-          borderRadius: '8px'
+          background: 'rgba(0,0,0,0.9)',
+          padding: '16px 24px',
+          borderRadius: '12px',
+          border: '1px solid #374151',
+          fontFamily: 'monospace'
         }}>
           No embedding data available
         </div>
@@ -381,56 +528,47 @@ export const Embeddings3D = ({ embeddings3d, tokens, layer, step, hiddenStates, 
   }
 
   return (
-    <group>
-      {/* Title */}
-      <Html position={[-6, 4, 0]}>
-        <div style={{
-          color: "#38bdf8",
-          fontSize: "1.4em",
-          fontWeight: "bold"
-        }}>
-          3D Embedding Vectors
-        </div>
-      </Html>
+    <RotatingContainer shouldRotate={shouldRotate}>
+      {/* Grid system for professional look */}
+      <GridPlane size={10} divisions={20} />
 
-      {/* Coordinate system */}
-      <CoordinateSystem size={8} />
+      {/* Enhanced coordinate system */}
+      <CoordinateSystem size={10} />
 
-      {/* Token-to-Token Vectors - Sequential appearance */}
-      {showVectors && points.map((point, i) => {
+      {/* Animated token points */}
+      {showPoints && points.map((point, i) => {
         if (i <= currentStep) {
-          const startPos = i === 0 ? [0, 0, 0] : points[i - 1];
-          const startTok = i === 0 ? "Origin" : (tokens && tokens[i - 1] ? tokens[i - 1] : `T${i-1}`);
-          
           return (
-            <AnimatedVector
-              key={`vector-${i}`}
-              startPosition={startPos}
+            <AnimatedTokenPoint
+              key={`point-${i}`}
+              position={point}
+              token={tokens && tokens[i] ? tokens[i] : `T${i}`}
+              color={tokenColors[i % tokenColors.length]}
+              delay={i}
+              isVisible={true}
+              index={i}
+            />
+          );
+        }
+        return null;
+      })}
+
+      {/* Animated arrows between consecutive tokens */}
+      {showPoints && points.map((point, i) => {
+        if (i > 0 && i <= currentStep) {
+          return (
+            <AnimatedArrow
+              key={`arrow-${i}`}
+              startPosition={points[i - 1]}
               endPosition={point}
-              startToken={startTok}
-              endToken={tokens && tokens[i] ? tokens[i] : `T${i}`}
-              color={vectorColors[i % vectorColors.length]}
+              color={tokenColors[i % tokenColors.length]}
               delay={i}
               isVisible={true}
             />
           );
         }
-        
-        return null; // Don't render future tokens
+        return null;
       })}
-
-      {/* Progress indicator */}
-      <Html position={[-6, -4, 0]}>
-        <div style={{
-          color: "#94a3b8",
-          fontSize: "14px",
-          background: "rgba(0,0,0,0.7)",
-          padding: "8px 12px",
-          borderRadius: "6px"
-        }}>
-          Vectors: {Math.min(currentStep + 1, points.length)} / {points.length}
-        </div>
-      </Html>
-    </group>
+    </RotatingContainer>
   );
 };

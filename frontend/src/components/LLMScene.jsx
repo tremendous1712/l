@@ -57,14 +57,14 @@ export const LLMScene = ({ children }) => {
 
   useEffect(() => {
     if (cameraRef.current) {
-      cameraRef.current.position.set(0, 0, 12);
+      cameraRef.current.position.set(10, 8, 10);
     }
   }, []);
 
   return (
     <Canvas
       camera={{
-        position: [0, 0, 12],
+        position: [10, 8, 10], // 45-degree angle view
         fov: 50,
         near: 0.1,
         far: 1000,
