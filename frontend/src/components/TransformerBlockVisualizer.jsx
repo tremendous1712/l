@@ -508,7 +508,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
   };
 
   return (
-    <>
+    <React.Fragment>
       <div style={{
         padding: '40px 0',
         backgroundColor: '#111827',
@@ -542,19 +542,12 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
           </p>
         </div>
 
-        {/* Layer Stacking Visualization */}
-        {/* Removed Multiple Layers Stack Together section and showLayers block as requested */}
-
         {/* Main Flow Visualization */}
         <div style={{
           maxWidth: '1200px',
           margin: '0 auto',
           padding: '0 40px'
         }}>
-
-
-          {/* Flow Arrow removed as requested */}
-
           {/* Transformer Block Container */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -589,7 +582,6 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
             }}>
               Transformer Block
             </div>
-
             {/* Stage 1: Multi-Head Self-Attention */}
             <motion.div
               ref={attentionRef}
@@ -608,24 +600,46 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
                 position: 'relative'
               }}
             >
-              <h3 style={{
-                color: '#f59e0b',
-                fontWeight: 'bold',
-                fontSize: '2em',
-                textAlign: 'center',
-                textShadow: '0 0 12px rgba(245, 158, 11, 0.6)',
-                marginBottom: '15px'
-              }}>
-                Multi-Head Self-Attention
-              </h3>
-              {/* Attention visualization - scanning only */}
-              {flowStep >= 1 && (
-                <>
-                  {renderScanningAnimation()}
-                </>
-              )}
+              <React.Fragment>
+                <h3 style={{
+                  color: '#f59e0b',
+                  fontWeight: 'bold',
+                  fontSize: '2em',
+                  textAlign: 'center',
+                  textShadow: '0 0 12px rgba(245, 158, 11, 0.6)',
+                  marginBottom: '15px'
+                }}>
+                  Multi-Head Self-Attention
+                </h3>
+                <p style={{
+                  fontSize: '1.1em',
+                  color: '#9ca3af',
+                  textAlign: 'center',
+                  marginBottom: '18px',
+                  marginTop: '-8px',
+                  lineHeight: '1.5'
+                }}>
+                 This mechanism aims to understand the relationships between tokens, enabling the model to capture deeper context.
+                </p>
+                {/* Technical subtitle during scanning */}
+                {isScanning && (
+                  <p style={{
+                    fontSize: '0.95em',
+                    color: '#60a5fa',
+                    textAlign: 'center',
+                    marginBottom: '10px',
+                    marginTop: '15px',
+                    lineHeight: '1.4',
+                    fontStyle: 'italic',
+                    fontFamily: 'monospace'
+                  }}>
+                    Computing attention weights and updating token representations through multi-head self-attention mechanism.
+                  </p>
+                )}
+                {/* Attention visualization - scanning only */}
+                {flowStep >= 1 && renderScanningAnimation()}
+              </React.Fragment>
             </motion.div>
-
             {/* Animated Blue Flow Arrow between Attention and Residual Stream */}
             {flowStep >= 2 && (
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px', position: 'relative', height: '70px' }}>
@@ -671,10 +685,6 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
                 </div>
               </div>
             )}
-
-            {/* Residual Connection + LayerNorm Arrow and Process */}
-            {/* Removed Residual + LayerNorm arc and arrow as requested. Addition symbol retained. */}
-
             {/* Residual Stream Visualization */}
             {flowStep >= 2 && (
               <motion.div
@@ -687,7 +697,6 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
                 {renderResidualStream()}
               </motion.div>
             )}
-
             {/* Animated Blue Flow Arrow between Residual Stream and FFN */}
             {flowStep >= 3 && (
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px', position: 'relative', height: '70px' }}>
@@ -733,7 +742,6 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
                 </div>
               </div>
             )}
-
             {/* Stage 2: Feedforward Neural Network */}
             <motion.div
               ref={ffnRef}
@@ -756,24 +764,11 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
                 justifyContent: 'center'
               }}
             >
-              <h3 style={{
-                color: '#f59e0b',
-                fontWeight: 'bold',
-                fontSize: '2em',
-                textAlign: 'center',
-                textShadow: '0 0 12px rgba(245, 158, 11, 0.6)',
-                marginBottom: '15px'
-              }}>
-                Feedforward Neural Network (FFN)
-              </h3>
-              {/* FFN visual: two rows of circles with lines connecting them */}
               <FFNDiagram />
             </motion.div>
-
             {/* Second Residual Connection + LayerNorm */}
             {/* Removed Residual + LayerNorm arc and arrow as requested. Addition symbol retained. */}
           </motion.div>
-
         </div>
       </div>
 
@@ -810,7 +805,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
           }
         }
       `}</style>
-    </>
+    </React.Fragment>
   );
 };
 
@@ -836,44 +831,67 @@ function FFNDiagram() {
     }))
   );
   return (
-    <div style={{ position: 'relative', width: '100%', height: `${svgHeight}px`, margin: '0 auto' }}>
-      {/* SVG lines behind nodes */}
-      <svg width={svgWidth} height={svgHeight} style={{ position: 'absolute', left: '50%', top: 0, transform: 'translateX(-50%)', pointerEvents: 'none', zIndex: 0 }}>
-        {/* Connect every neuron in each row to every neuron in the next row */}
-        {Array.from({length: rowCount - 1}, (_, rowIdx) =>
-          rows[rowIdx].map((fromNode, i) =>
-            rows[rowIdx + 1].map((toNode, j) => (
-              <line
-                key={`line-${rowIdx}-${i}-${j}`}
-                x1={fromNode.x}
-                y1={fromNode.y}
-                x2={toNode.x}
-                y2={toNode.y}
-                stroke="#991b1b"
-                strokeWidth="4"
-                opacity="0.7"
-              />
-            ))
-          )
+    <div style={{ width: '100%' }}>
+      <h3 style={{
+        color: '#f59e0b',
+        fontWeight: 'bold',
+        fontSize: '2em',
+        textAlign: 'center',
+        textShadow: '0 0 12px rgba(245, 158, 11, 0.6)',
+        marginBottom: '10px',
+        marginTop: '0px'
+      }}>
+        Feedforward Neural Network (FFN)
+      </h3>
+      <p style={{
+        fontSize: '1.1em',
+        color: '#9ca3af',
+        textAlign: 'center',
+        marginBottom: '18px',
+        marginTop: '-8px',
+        lineHeight: '1.5'
+      }}>
+        Each token is transformed and enriched by the feedforward network, deepening the model’s understanding at every step.
+      </p>
+      <div style={{ position: 'relative', width: '100%', height: `${svgHeight}px`, margin: '0 auto' }}>
+        {/* SVG lines behind nodes */}
+        <svg width={svgWidth} height={svgHeight} style={{ position: 'absolute', left: '50%', top: 0, transform: 'translateX(-50%)', pointerEvents: 'none', zIndex: 0 }}>
+          {/* Connect every neuron in each row to every neuron in the next row */}
+          {Array.from({length: rowCount - 1}, (_, rowIdx) =>
+            rows[rowIdx].map((fromNode, i) =>
+              rows[rowIdx + 1].map((toNode, j) => (
+                <line
+                  key={`line-${rowIdx}-${i}-${j}`}
+                  x1={fromNode.x}
+                  y1={fromNode.y}
+                  x2={toNode.x}
+                  y2={toNode.y}
+                  stroke="#991b1b"
+                  strokeWidth="4"
+                  opacity="0.7"
+                />
+              ))
+            )
+          )}
+        </svg>
+        {/* Render all neurons */}
+        {rows.map((row, rowIdx) =>
+          row.map((pos, i) => (
+            <div key={`row${rowIdx}-node${i}`} style={{
+              position: 'absolute',
+              left: `calc(50% - ${svgWidth/2 - (pos.x - nodeRadius)}px)`,
+              top: `${pos.y - nodeRadius}px`,
+              width: `${nodeRadius*2}px`,
+              height: `${nodeRadius*2}px`,
+              border: '4px solid #fff',
+              borderRadius: '50%',
+              background: '#111827',
+              boxShadow: '0 0 18px #8b5cf6',
+              zIndex: 1,
+            }} />
+          ))
         )}
-      </svg>
-      {/* Render all neurons */}
-      {rows.map((row, rowIdx) =>
-        row.map((pos, i) => (
-          <div key={`row${rowIdx}-node${i}`} style={{
-            position: 'absolute',
-            left: `calc(50% - ${svgWidth/2 - (pos.x - nodeRadius)}px)`,
-            top: `${pos.y - nodeRadius}px`,
-            width: `${nodeRadius*2}px`,
-            height: `${nodeRadius*2}px`,
-            border: '4px solid #fff',
-            borderRadius: '50%',
-            background: '#111827',
-            boxShadow: '0 0 18px #8b5cf6',
-            zIndex: 1,
-          }} />
-        ))
-      )}
+      </div>
     </div>
   );
 }
