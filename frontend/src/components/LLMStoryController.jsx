@@ -4,9 +4,8 @@ import { LLMScene } from "./LLMScene";
 
 import { TokenizationViewWeb } from "./TokenizationViewWeb";
 import { Embeddings3D } from "./Embeddings3D";
-import { AttentionView } from "./AttentionView";
 import { SoftmaxView } from "./SoftmaxView";
-import { ResidualStreamView } from "./ResidualStreamView";
+import { TransformerBlockVisualizer } from "./TransformerBlockVisualizer";
 
 /**
  * Navigation steps for the LLM visualization story
@@ -14,9 +13,8 @@ import { ResidualStreamView } from "./ResidualStreamView";
 const STORY_STEPS = [
   { name: "Tokenization" },
   { name: "Embeddings - 3D" },
-  { name: "Attention" },
+  { name: "Transformer Block" },
   { name: "Softmax" },
-  { name: "Residual Stream" },
 ];
 
 /**
@@ -86,38 +84,34 @@ export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention,
         </div>
       )}
 
-      {/* 3D Scene - Only for 3D visualizations (not for Tokenization, Softmax, or Residual Stream) */}
-      {step !== 0 && step !== 3 && step !== 4 && (
+      {/* 3D Scene - Only for Embeddings visualization */}
+      {step === 1 && (
         <div className="scene-container">
           <LLMScene>
-            {step === 1 && (
-              embeddings3d || hiddenStates ? (
-                <Embeddings3D
-                  embeddings3d={embeddings3d}
-                  tokens={tokens}
-                  step={step}
-                  hiddenStates={hiddenStates}
-                  sentence={tokens.join(' ')}
-                />
-              ) : (
-                <group><mesh><boxGeometry args={[2,1,0.2]} /><meshStandardMaterial color="#f87171" /></mesh></group>
-              )
-            )}
-            {step === 2 && (
-              attention && attention.length > 0 ? (
-                <AttentionView attention={attention} tokens={tokens} />
-              ) : (
-                <Html><div style={{ color: '#f87171' }}>No attention data</div></Html>
-              )
+            {embeddings3d || hiddenStates ? (
+              <Embeddings3D
+                embeddings3d={embeddings3d}
+                tokens={tokens}
+                step={step}
+                hiddenStates={hiddenStates}
+                sentence={tokens.join(' ')}
+              />
+            ) : (
+              <group><mesh><boxGeometry args={[2,1,0.2]} /><meshStandardMaterial color="#f87171" /></mesh></group>
             )}
           </LLMScene>
         </div>
       )}
 
-      {/* Residual Stream View - 2D Chart */}
-      {step === 4 && (
-        <div style={{ padding: "20px", backgroundColor: "#1f2937", borderRadius: "12px", margin: "20px 0" }}>
-          <ResidualStreamView sentence={inputText} />
+      {/* Transformer Block Visualizer - Full Page */}
+      {step === 2 && (
+        <div style={{ minHeight: "100vh", backgroundColor: "#111827", padding: "40px 0" }}>
+          <TransformerBlockVisualizer 
+            blockIndex={1} 
+            sentence={inputText} 
+            attention={attention}
+            tokens={tokens}
+          />
         </div>
       )}
     </div>
