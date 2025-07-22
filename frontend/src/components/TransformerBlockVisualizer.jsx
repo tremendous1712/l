@@ -30,6 +30,11 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
   const [layer, setLayer] = useState(0);
   const [head, setHead] = useState(0);
   
+  // Attention scanning animation state
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanningPosition, setScanningPosition] = useState(0);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  
   // Residual stream state
   const [chartData, setChartData] = useState([]);
   const [residualTokens, setResidualTokens] = useState([]);
@@ -109,14 +114,36 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
     if (sentence) {
       setFlowStep(0);
       setShowLayers(false);
+      setIsScanning(false);
+      setShowHeatmap(false);
+      setScanningPosition(0);
       
       // Animate through stages
       const timeouts = [
-        setTimeout(() => setFlowStep(1), 1000),   // Self-Attention
-        setTimeout(() => setFlowStep(2), 3000),   // Residual + LayerNorm
-        setTimeout(() => setFlowStep(3), 5000),   // FFN
-        setTimeout(() => setFlowStep(4), 7000),   // Final Residual + LayerNorm
-        setTimeout(() => setShowLayers(true), 9000), // Show layer stacking
+        setTimeout(() => {
+          setFlowStep(1);
+          // Start attention scanning animation
+          setIsScanning(true);
+          setScanningPosition(0);
+        }, 1000),
+        
+        // Scanning animation - move across tokens
+        setTimeout(() => setScanningPosition(1), 1500),
+        setTimeout(() => setScanningPosition(2), 2000),
+        setTimeout(() => setScanningPosition(3), 2500),
+        setTimeout(() => setScanningPosition(4), 3000),
+        setTimeout(() => setScanningPosition(5), 3500),
+        
+        // Complete scanning and show heatmap
+        setTimeout(() => {
+          setIsScanning(false);
+          setShowHeatmap(true);
+        }, 4000),
+        
+        setTimeout(() => setFlowStep(2), 5000),   // Residual + LayerNorm
+        setTimeout(() => setFlowStep(3), 7000),   // FFN
+        setTimeout(() => setFlowStep(4), 9000),   // Final Residual + LayerNorm
+        setTimeout(() => setShowLayers(true), 11000), // Show layer stacking
       ];
       
       return () => timeouts.forEach(clearTimeout);
@@ -130,155 +157,128 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
   ];
 
   // Render attention heatmap
+  // Scanning animation before heatmap
+  const renderScanningAnimation = () => {
+    if (!tokens.length) return null;
+    return (
+      <div style={{
+        background: 'rgba(15, 23, 42, 0.8)',
+        borderRadius: '12px',
+        padding: '20px',
+        border: '1px solid rgba(59, 130, 246, 0.3)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <h4 style={{ color: '#60a5fa', margin: '0 0 20px 0', textAlign: 'center' }}>
+          Attention Head Scanning Context
+        </h4>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '30px', position: 'relative' }}>
+          {tokens.map((token, i) => (
+            <div key={i} style={{
+              background: `linear-gradient(135deg, ${tokenColors[i % tokenColors.length]}44, ${tokenColors[i % tokenColors.length]}22)`,
+              border: `2px solid ${tokenColors[i % tokenColors.length]}`,
+              borderRadius: '8px',
+              padding: '12px 16px',
+              color: tokenColors[i % tokenColors.length],
+              fontWeight: 'bold',
+              position: 'relative',
+              transition: 'all 0.3s ease'
+            }}>
+              "{token}"
+              {isScanning && scanningPosition === i && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1.2 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  style={{
+                    position: 'absolute',
+                    top: '-10px', left: '-10px', right: '-10px', bottom: '-10px',
+                    border: '3px solid #f59e0b', borderRadius: '12px', boxShadow: '0 0 20px rgba(245, 158, 11, 0.8)', pointerEvents: 'none'
+                  }}
+                />
+              )}
+              {isScanning && scanningPosition === i && (
+                <motion.div
+                  initial={{ height: 0 }}
+                  animate={{ height: '40px' }}
+                  style={{
+                    position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', width: '4px', background: 'linear-gradient(to bottom, #f59e0b, transparent)', borderRadius: '2px', boxShadow: '0 0 10px rgba(245, 158, 11, 0.6)'
+                  }}
+                />
+              )}
+            </div>
+          ))}
+          {isScanning && (
+            <motion.div
+              initial={{ x: -100, y: -80 }}
+              animate={{ x: scanningPosition * 95 - 50, y: -80 }}
+              transition={{ type: "spring", stiffness: 100, damping: 20, duration: 0.4 }}
+              style={{ position: 'absolute', width: '60px', height: '40px', background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1f2937', fontWeight: 'bold', fontSize: '0.9em', boxShadow: '0 0 20px rgba(245, 158, 11, 0.8)', border: '2px solid #f59e0b', zIndex: 10 }}>
+                👁️
+            </motion.div>
+          )}
+        </div>
+        {isScanning && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', color: '#f59e0b', fontSize: '1.1em', fontWeight: 'bold', marginTop: '20px' }}>
+            Analyzing context... Token {scanningPosition + 1} of {tokens.length}
+          </motion.div>
+        )}
+        {!isScanning && !showHeatmap && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', color: '#10b981', fontSize: '1.1em', fontWeight: 'bold', marginTop: '20px' }}>
+            ✅ Context analysis complete! Generating attention weights...
+          </motion.div>
+        )}
+      </div>
+    );
+  };
+
+  // Render attention heatmap (after scanning)
   const renderAttentionHeatmap = () => {
     if (!attentionData || !tokens.length) return null;
-    
     const matrix = attentionData[layer]?.[head] || attentionData[0]?.[0];
     if (!matrix) return null;
-    
     return (
-      <div style={{ 
-        background: 'rgba(15, 23, 42, 0.8)', 
-        borderRadius: '12px', 
-        padding: '20px',
-        border: '1px solid rgba(59, 130, 246, 0.3)'
-      }}>
+      <div style={{ background: 'rgba(15, 23, 42, 0.8)', borderRadius: '12px', padding: '20px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
         <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h4 style={{ color: '#60a5fa', margin: 0 }}>
-            Attention Weights Matrix
-          </h4>
-          
+          <h4 style={{ color: '#60a5fa', margin: 0 }}>Attention Weights Matrix</h4>
           {/* Layer and Head controls */}
           <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ color: '#9ca3af', fontSize: '0.9em' }}>Layer:</span>
-              <button 
-                onClick={() => setLayer(Math.max(0, layer - 1))}
-                style={{ 
-                  background: '#3b82f6',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  color: 'white',
-                  cursor: 'pointer',
-                  fontSize: '0.8em'
-                }}
-              >
-                -
-              </button>
+              <button onClick={() => setLayer(Math.max(0, layer - 1))} style={{ background: '#3b82f6', border: 'none', borderRadius: '4px', padding: '4px 8px', color: 'white', cursor: 'pointer', fontSize: '0.8em' }}>-</button>
               <span style={{ color: 'white', fontSize: '0.9em', minWidth: '20px', textAlign: 'center' }}>{layer}</span>
-              <button 
-                onClick={() => setLayer(Math.min((attentionData?.length || 1) - 1, layer + 1))}
-                style={{ 
-                  background: '#3b82f6',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  color: 'white',
-                  cursor: 'pointer',
-                  fontSize: '0.8em'
-                }}
-              >
-                +
-              </button>
+              <button onClick={() => setLayer(Math.min((attentionData?.length || 1) - 1, layer + 1))} style={{ background: '#3b82f6', border: 'none', borderRadius: '4px', padding: '4px 8px', color: 'white', cursor: 'pointer', fontSize: '0.8em' }}>+</button>
             </div>
-            
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ color: '#9ca3af', fontSize: '0.9em' }}>Head:</span>
-              <button 
-                onClick={() => setHead(Math.max(0, head - 1))}
-                style={{ 
-                  background: '#3b82f6',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  color: 'white',
-                  cursor: 'pointer',
-                  fontSize: '0.8em'
-                }}
-              >
-                -
-              </button>
+              <button onClick={() => setHead(Math.max(0, head - 1))} style={{ background: '#3b82f6', border: 'none', borderRadius: '4px', padding: '4px 8px', color: 'white', cursor: 'pointer', fontSize: '0.8em' }}>-</button>
               <span style={{ color: 'white', fontSize: '0.9em', minWidth: '20px', textAlign: 'center' }}>{head}</span>
-              <button 
-                onClick={() => setHead(Math.min((attentionData?.[layer]?.length || 1) - 1, head + 1))}
-                style={{ 
-                  background: '#3b82f6',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  color: 'white',
-                  cursor: 'pointer',
-                  fontSize: '0.8em'
-                }}
-              >
-                +
-              </button>
+              <button onClick={() => setHead(Math.min((attentionData?.[layer]?.length || 1) - 1, head + 1))} style={{ background: '#3b82f6', border: 'none', borderRadius: '4px', padding: '4px 8px', color: 'white', cursor: 'pointer', fontSize: '0.8em' }}>+</button>
             </div>
           </div>
         </div>
-
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: `repeat(${tokens.length + 1}, 1fr)`,
-          gap: '2px',
-          fontSize: '0.8em'
-        }}>
-          {/* Header row */}
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${tokens.length + 1}, 1fr)`, gap: '2px', fontSize: '0.8em' }}>
           <div style={{ background: 'rgba(59, 130, 246, 0.2)', padding: '8px', borderRadius: '4px' }}></div>
           {tokens.map((token, i) => (
-            <div key={i} style={{ 
-              background: 'rgba(59, 130, 246, 0.2)', 
-              padding: '8px', 
-              borderRadius: '4px',
-              textAlign: 'center',
-              color: tokenColors[i % tokenColors.length],
-              fontWeight: 'bold'
-            }}>
-              {token}
-            </div>
+            <div key={i} style={{ background: 'rgba(59, 130, 246, 0.2)', padding: '8px', borderRadius: '4px', textAlign: 'center', color: tokenColors[i % tokenColors.length], fontWeight: 'bold' }}>{token}</div>
           ))}
-          
-          {/* Data rows */}
           {matrix.map((row, i) => (
             <React.Fragment key={i}>
-              <div style={{ 
-                background: 'rgba(59, 130, 246, 0.2)', 
-                padding: '8px', 
-                borderRadius: '4px',
-                color: tokenColors[i % tokenColors.length],
-                fontWeight: 'bold',
-                textAlign: 'center'
-              }}>
-                {tokens[i]}
-              </div>
+              <div style={{ background: 'rgba(59, 130, 246, 0.2)', padding: '8px', borderRadius: '4px', color: tokenColors[i % tokenColors.length], fontWeight: 'bold', textAlign: 'center' }}>{tokens[i]}</div>
               {row.map((weight, j) => (
-                <div key={j} style={{ 
-                  background: `rgba(59, 130, 246, ${weight})`, 
-                  padding: '8px',
-                  borderRadius: '4px',
-                  textAlign: 'center',
-                  color: '#ffffff',
-                  fontFamily: 'monospace',
-                  border: i === j ? '2px solid #f59e0b' : 'none' // Highlight diagonal
-                }}>
-                  {weight.toFixed(2)}
-                </div>
+                <div key={j} style={{ background: `rgba(59, 130, 246, ${weight})`, padding: '8px', borderRadius: '4px', textAlign: 'center', color: '#ffffff', fontFamily: 'monospace', border: i === j ? '2px solid #f59e0b' : 'none' }}>{weight.toFixed(2)}</div>
               ))}
             </React.Fragment>
           ))}
         </div>
-        <div style={{ 
-          marginTop: '10px', 
-          fontSize: '0.8em', 
-          color: '#9ca3af', 
-          textAlign: 'center' 
-        }}>
+        <div style={{ marginTop: '10px', fontSize: '0.8em', color: '#9ca3af', textAlign: 'center' }}>
           Layer {layer}, Head {head} - Each token attends to all tokens (including itself)
         </div>
       </div>
     );
   };
+
+  // Render scanning animation
 
   // Render residual stream chart
   const renderResidualStream = () => {
@@ -348,7 +348,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
             fontWeight: 'bold',
             textShadow: '0 0 20px rgba(245, 158, 11, 0.5)'
           }}>
-            Transformer Block {blockIndex}
+            Transformer Block
           </h2>
           <p style={{
             fontSize: '1.4em',
@@ -362,59 +362,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
         </div>
 
         {/* Layer Stacking Visualization */}
-        {showLayers && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              margin: '40px auto',
-              maxWidth: '600px',
-              padding: '0 40px'
-            }}
-          >
-            <h3 style={{
-              textAlign: 'center',
-              color: '#10b981',
-              fontSize: '2em',
-              marginBottom: '30px'
-            }}>
-              Multiple Layers Stack Together
-            </h3>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
-              {[1, 2, 3, 4, 5, 6].map((layerNum, i) => (
-                <motion.div
-                  key={layerNum}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.2 }}
-                  style={{
-                    width: '80px',
-                    height: '120px',
-                    background: `linear-gradient(135deg, ${tokenColors[i % tokenColors.length]}44, ${tokenColors[i % tokenColors.length]}22)`,
-                    border: `2px solid ${tokenColors[i % tokenColors.length]}`,
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#ffffff',
-                    fontWeight: 'bold',
-                    fontSize: '1.2em'
-                  }}
-                >
-                  L{layerNum}
-                </motion.div>
-              ))}
-            </div>
-            <div style={{
-              textAlign: 'center',
-              marginTop: '20px',
-              color: '#9ca3af',
-              fontSize: '1.1em'
-            }}>
-              Each layer refines the representation further
-            </div>
-          </motion.div>
-        )}
+        {/* Removed Multiple Layers Stack Together section and showLayers block as requested */}
 
         {/* Main Flow Visualization */}
         <div style={{
@@ -530,60 +478,17 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
                 Multi-Head Self-Attention
               </h3>
               
-              {/* Attention visualization */}
-              {flowStep >= 1 && renderAttentionHeatmap()}
+              {/* Attention visualization - scanning or heatmap */}
+              {flowStep >= 1 && (
+                <>
+                  {isScanning && renderScanningAnimation()}
+                  {showHeatmap && !isScanning && renderAttentionHeatmap()}
+                </>
+              )}
             </motion.div>
 
             {/* Residual Connection + LayerNorm Arrow and Process */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: flowStep >= 2 ? 1 : 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              style={{ position: 'relative', marginBottom: '30px' }}
-            >
-              {/* Residual Skip Arc */}
-              <svg width="100%" height="80" style={{ position: 'absolute', top: '-40px', left: 0 }}>
-                <defs>
-                  <linearGradient id="residualGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" style={{ stopColor: '#10b981', stopOpacity: 1 }} />
-                    <stop offset="100%" style={{ stopColor: '#34d399', stopOpacity: 1 }} />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M 50 60 Q 300 20, 550 60"
-                  stroke="url(#residualGradient)"
-                  strokeWidth="6"
-                  fill="none"
-                  strokeDasharray="10,5"
-                  style={{
-                    filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))'
-                  }}
-                />
-                <text x="300" y="15" fill="#10b981" textAnchor="middle" fontSize="16" fontWeight="bold">
-                  Residual + LayerNorm
-                </text>
-              </svg>
-
-              {/* Addition Symbol */}
-              <div style={{
-                position: 'absolute',
-                right: '20px',
-                top: '20px',
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: '#10b981',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.8em',
-                color: '#ffffff',
-                fontWeight: 'bold',
-                boxShadow: '0 0 15px rgba(16, 185, 129, 0.6)'
-              }}>
-                +
-              </div>
-            </motion.div>
+            {/* Removed Residual + LayerNorm arc and arrow as requested. Addition symbol retained. */}
 
             {/* Residual Stream Visualization */}
             {flowStep >= 2 && (
@@ -693,55 +598,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
             </motion.div>
 
             {/* Second Residual Connection + LayerNorm */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: flowStep >= 4 ? 1 : 0 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              style={{ position: 'relative', marginBottom: '20px' }}
-            >
-              {/* Residual Skip Arc */}
-              <svg width="100%" height="80" style={{ position: 'absolute', top: '-40px', left: 0 }}>
-                <defs>
-                  <linearGradient id="residualGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" style={{ stopColor: '#ec4899', stopOpacity: 1 }} />
-                    <stop offset="100%" style={{ stopColor: '#f472b6', stopOpacity: 1 }} />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M 50 60 Q 300 20, 550 60"
-                  stroke="url(#residualGradient2)"
-                  strokeWidth="6"
-                  fill="none"
-                  strokeDasharray="10,5"
-                  style={{
-                    filter: 'drop-shadow(0 0 8px rgba(236, 72, 153, 0.6))'
-                  }}
-                />
-                <text x="300" y="15" fill="#ec4899" textAnchor="middle" fontSize="16" fontWeight="bold">
-                  Residual + LayerNorm
-                </text>
-              </svg>
-
-              {/* Addition Symbol */}
-              <div style={{
-                position: 'absolute',
-                right: '20px',
-                top: '20px',
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: '#ec4899',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.8em',
-                color: '#ffffff',
-                fontWeight: 'bold',
-                boxShadow: '0 0 15px rgba(236, 72, 153, 0.6)'
-              }}>
-                +
-              </div>
-            </motion.div>
+            {/* Removed Residual + LayerNorm arc and arrow as requested. Addition symbol retained. */}
           </motion.div>
 
           {/* Flow Arrow pointing to Final Output */}
