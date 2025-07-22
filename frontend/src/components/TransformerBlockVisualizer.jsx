@@ -457,10 +457,25 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
     }
 
     return (
-      <div style={{ background: 'rgba(15, 23, 42, 0.8)', borderRadius: '12px', padding: '20px' }}>
-        <h4 style={{ color: '#10b981', marginBottom: '15px', textAlign: 'center' }}>
+      <div style={{
+        background: '#1e293b',
+        borderRadius: '12px',
+        border: '2px solid #3b82f6',
+        padding: '25px',
+        marginBottom: '30px',
+        position: 'relative',
+        boxShadow: '0 0 12px rgba(59, 130, 246, 0.6)'
+      }}>
+        <h3 style={{
+          color: '#f59e0b',
+          fontWeight: 'bold',
+          fontSize: '2em',
+          textAlign: 'center',
+          textShadow: '0 0 12px rgba(245, 158, 11, 0.6)',
+          marginBottom: '15px'
+        }}>
           Residual Stream Norms Across Layers
-        </h4>
+        </h3>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(55, 65, 81, 0.3)" />
@@ -481,8 +496,8 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
                 type="monotone"
                 dataKey={`token_${idx}`}
                 stroke={tokenColors[idx % tokenColors.length]}
-                strokeWidth={2}
-                dot={false}
+                strokeWidth={3}
+                dot={{ r: 7, stroke: tokenColors[idx % tokenColors.length], strokeWidth: 2, fill: '#fff' }}
                 name={`"${tok}"`}
               />
             ))}

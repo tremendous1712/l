@@ -15,8 +15,10 @@ from fastapi.middleware.cors import CORSMiddleware  # ✅ CORS
 from pydantic import BaseModel
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import torch
+
 from sklearn.decomposition import PCA
 import numpy as np
+from transformer_lens import HookedTransformer
 
 
 app = FastAPI(title="LLM Visualization API", version="1.0.0")
@@ -30,6 +32,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Load tokenizer and model (GPT-2)
 try:
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
@@ -42,6 +45,13 @@ except Exception as e:
     print("Model/tokenizer load error:", e)
     tokenizer = None
     model = None
+
+# Load TransformerLens model for residual stream
+try:
+    tl_model = HookedTransformer.from_pretrained("gpt2-small", device="cpu")
+except Exception as e:
+    print("TransformerLens load error:", e)
+    tl_model = None
 
 
 class TextInput(BaseModel):
@@ -156,41 +166,47 @@ def next_token_prediction(input: TextInput):
         return {"token": "", "token_id": -1, "probability": 0.0, "probs": []}
 
 
+
 @app.post("/residual_stream")
 def get_residual_stream(input: TextInput):
-    """
-    Compute residual stream evolution (e.g., norm or PCA dimension) across GPT-2 layers.
-    
-    Returns:
-        dict: Each token gets an array of norm or PCA(1D) per layer
-    """
-    if tokenizer is None or model is None:
-        return {"layer_values": []}
+    """Get residual stream norms using TransformerLens"""
+    if tl_model is None:
+        return {"layer_values": [], "tokens": [], "num_layers": 0}
     try:
-        inputs = tokenizer(input.text, return_tensors="pt", add_special_tokens=True)
-        with torch.no_grad():
-            outputs = model(**inputs, output_hidden_states=True)
-        hidden_states = outputs.hidden_states  # List of tensors: [layer, 1, seq_len, hidden_dim]
+        # 1. Tokenize input
+        tokens = tl_model.to_str_tokens(input.text)
+        input_ids = tl_model.to_tokens(input.text)
 
-        # Convert each layer to [seq_len, hidden_dim] and calculate norm per token
-        token_layer_values = []  # List of token trajectories (each is [layer_0_val, layer_1_val, ..., layer_n_val])
-        num_tokens = hidden_states[0].shape[1]
-        num_layers = len(hidden_states)
+        # 2. Run model with cache
+        _, cache = tl_model.run_with_cache(input_ids)
 
-        for token_idx in range(num_tokens):
-            values_per_layer = []
-            for layer_idx in range(num_layers):
-                vec = hidden_states[layer_idx][0, token_idx]  # Shape: [hidden_dim]
-                values_per_layer.append(torch.norm(vec).item())  # Could also use vec[0].item() for PCA dim
-            token_layer_values.append(values_per_layer)
+        # 3. Extract residual norms
+        layer_values = []
+        num_layers = tl_model.cfg.n_layers
+
+        for token_idx in range(input_ids.shape[1]):
+            token_vals = []
+            for layer in range(num_layers + 1):  # +1 for embedding layer
+                resid_key = f"blocks.{layer}.hook_resid_post" if layer < num_layers else "hook_embed"
+                resid = cache[resid_key][0, token_idx]
+                token_vals.append(torch.norm(resid).item())
+            layer_values.append(token_vals)
+
+        # 4. Clean tokens (remove special tokens)
+        clean_tokens = []
+        clean_values = []
+        for token, vals in zip(tokens, layer_values):
+            if token not in ["<|endoftext|>"]:
+                clean_tokens.append(token.replace("Ġ", " "))
+                clean_values.append(vals)
 
         return {
-            "layer_values": token_layer_values,
-            "tokens": tokenizer.convert_ids_to_tokens(inputs["input_ids"][0]),
-            "num_layers": num_layers
+            "layer_values": clean_values,
+            "tokens": clean_tokens,
+            "num_layers": num_layers + 1
         }
     except Exception as e:
-        print("Error in /residual_stream:", e)
+        print(f"Residual stream error: {str(e)}")
         return {"layer_values": [], "tokens": [], "num_layers": 0}
 
 
