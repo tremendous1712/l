@@ -165,8 +165,9 @@ export const TokenizationViewWeb = ({ sentence, tokens, inputIds, embeddings }) 
           <h2 style={{
             fontSize: '3.5em',
             marginBottom: '20px',
-            color: '#60a5fa',
-            fontWeight: 'bold'
+            color: '#f59e0b',
+            fontWeight: 'bold',
+            textShadow: '0 0 20px rgba(245, 158, 11, 0.5)'
           }}>
             Tokenization Process
           </h2>
@@ -284,8 +285,10 @@ export const TokenizationViewWeb = ({ sentence, tokens, inputIds, embeddings }) 
             <h3 style={{
               textAlign: 'center',
               marginBottom: '50px',
-              color: '#60a5fa',
+              color: '#f59e0b',
               fontSize: '2.2em',
+              fontWeight: 'bold',
+              textShadow: '0 0 20px rgba(245, 158, 11, 0.5)',
               opacity: flowStep >= 0 ? 1 : 0,
               transform: flowStep >= 0 ? 'scale(1)' : 'scale(0.95)',
               transition: 'all 0.8s ease 0.8s'

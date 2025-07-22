@@ -35,6 +35,10 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
   const [scanningPosition, setScanningPosition] = useState(0);
   const [showHeatmap, setShowHeatmap] = useState(false);
   
+  // Embedding evolution state
+  const [embeddingVectors, setEmbeddingVectors] = useState([]);
+  const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
+  
   // Residual stream state
   const [chartData, setChartData] = useState([]);
   const [residualTokens, setResidualTokens] = useState([]);
@@ -88,6 +92,44 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
     if (sentence) fetchResiduals();
   }, [sentence]);
 
+  // Fetch embedding vectors for different transformer blocks
+  const fetchEmbeddingForBlock = async (blockIndex) => {
+    if (!sentence) return [];
+    
+    try {
+      console.log(`🔵 Fetching embeddings for block ${blockIndex}:`, sentence);
+      
+      // First test if backend is reachable
+      try {
+        const healthCheck = await axios.get("http://localhost:8000/health");
+        console.log(`💚 Backend health check OK:`, healthCheck.data);
+      } catch (healthErr) {
+        console.error(`💥 Backend health check failed:`, healthErr.message);
+        throw new Error("Backend server is not reachable");
+      }
+      
+      const res = await axios.post("http://localhost:8000/embeddings", {
+        text: sentence,
+        layer: blockIndex
+      });
+
+      console.log(`✅ Embeddings response for block ${blockIndex}:`, res.data);
+      
+      // Return the actual embedding vectors for each token
+      if (res.data && res.data.embeddings) {
+        console.log(`📊 Received ${res.data.embeddings.length} embedding vectors`);
+        return res.data.embeddings;
+      } else {
+        console.warn(`⚠️ No embeddings in response for block ${blockIndex}:`, res.data);
+        return [];
+      }
+    } catch (err) {
+      console.error(`❌ Error loading embeddings for block ${blockIndex}:`, err);
+      console.error(`❌ Error details:`, err.response?.data || err.message);
+      return [];
+    }
+  };
+
   // Set up attention and token data
   useEffect(() => {
     if (propTokens && propTokens.length > 0) {
@@ -117,33 +159,64 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
       setIsScanning(false);
       setShowHeatmap(false);
       setScanningPosition(0);
+      setCurrentBlockIndex(0);
+      setEmbeddingVectors([]);
       
       // Animate through stages
       const timeouts = [
-        setTimeout(() => {
+        setTimeout(async () => {
           setFlowStep(1);
           // Start attention scanning animation
           setIsScanning(true);
           setScanningPosition(0);
+          setCurrentBlockIndex(0);
+          
+          // Fetch initial embeddings for block 0
+          console.log("🚀 Starting embedding scanning...");
+          const initialEmbeddings = await fetchEmbeddingForBlock(0);
+          setEmbeddingVectors(initialEmbeddings);
         }, 1000),
         
-        // Scanning animation - move across tokens
-        setTimeout(() => setScanningPosition(1), 1500),
-        setTimeout(() => setScanningPosition(2), 2000),
-        setTimeout(() => setScanningPosition(3), 2500),
-        setTimeout(() => setScanningPosition(4), 3000),
-        setTimeout(() => setScanningPosition(5), 3500),
+        // Scanning animation - progress through transformer blocks
+        setTimeout(async () => {
+          setCurrentBlockIndex(1);
+          const embeddings = await fetchEmbeddingForBlock(1);
+          setEmbeddingVectors(embeddings);
+          setScanningPosition(1);
+        }, 1500),
+        setTimeout(async () => {
+          setCurrentBlockIndex(2);
+          const embeddings = await fetchEmbeddingForBlock(2);
+          setEmbeddingVectors(embeddings);
+          setScanningPosition(2);
+        }, 2000),
+        setTimeout(async () => {
+          setCurrentBlockIndex(3);
+          const embeddings = await fetchEmbeddingForBlock(3);
+          setEmbeddingVectors(embeddings);
+          setScanningPosition(3);
+        }, 2500),
+        setTimeout(async () => {
+          setCurrentBlockIndex(4);
+          const embeddings = await fetchEmbeddingForBlock(4);
+          setEmbeddingVectors(embeddings);
+          setScanningPosition(4);
+        }, 3000),
+        setTimeout(async () => {
+          setCurrentBlockIndex(5);
+          const embeddings = await fetchEmbeddingForBlock(5);
+          setEmbeddingVectors(embeddings);
+          setScanningPosition(5);
+        }, 3500),
         
-        // Complete scanning and show heatmap
+        // Complete scanning
         setTimeout(() => {
           setIsScanning(false);
-          setShowHeatmap(true);
         }, 4000),
         
         setTimeout(() => setFlowStep(2), 5000),   // Residual + LayerNorm
         setTimeout(() => setFlowStep(3), 7000),   // FFN
         setTimeout(() => setFlowStep(4), 9000),   // Final Residual + LayerNorm
-        setTimeout(() => setShowLayers(true), 11000), // Show layer stacking
       ];
       
       return () => timeouts.forEach(clearTimeout);
@@ -157,7 +230,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
   ];
 
   // Render attention heatmap
-  // Scanning animation before heatmap
+  // Scanning animation with embedding vectors
   const renderScanningAnimation = () => {
     if (!tokens.length) return null;
     return (
@@ -169,63 +242,118 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
         position: 'relative',
         overflow: 'hidden'
       }}>
-        <h4 style={{ color: '#60a5fa', margin: '0 0 20px 0', textAlign: 'center' }}>
-          Attention Head Scanning Context
+        <h4 style={{
+          color: '#fbbf24',
+          textShadow: '0 0 8px #f59e0b, 0 0 16px #fbbf24',
+          margin: '0 0 20px 0',
+          textAlign: 'center',
+          fontWeight: 'bold',
+          fontSize: '2.2em',
+          letterSpacing: '0.03em',
+          background: 'linear-gradient(90deg, #fbbf24 60%, #f59e0b 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          filter: 'drop-shadow(0 0 6px #fbbf24)',
+        }}>
+          Embedding Evolution
         </h4>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '30px', position: 'relative' }}>
-          {tokens.map((token, i) => (
-            <div key={i} style={{
-              background: `linear-gradient(135deg, ${tokenColors[i % tokenColors.length]}44, ${tokenColors[i % tokenColors.length]}22)`,
-              border: `2px solid ${tokenColors[i % tokenColors.length]}`,
-              borderRadius: '8px',
-              padding: '12px 16px',
-              color: tokenColors[i % tokenColors.length],
-              fontWeight: 'bold',
-              position: 'relative',
-              transition: 'all 0.3s ease'
+        
+        {/* Current Block Indicator */}
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <span style={{ color: '#f59e0b', fontSize: '1.2em', fontWeight: 'bold' }}>
+            Processing Block: {currentBlockIndex}
+          </span>
+        </div>
+        
+        {/* Embedding Vector Display */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px', position: 'relative' }}>
+          {/* Embedding Values List */}
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.9)',
+            border: '2px solid #f59e0b',
+            borderRadius: '12px',
+            padding: '20px',
+            minWidth: '300px',
+            maxWidth: '500px',
+            fontFamily: 'monospace'
+          }}>
+            <div style={{ 
+              color: '#f59e0b', 
+              fontSize: '1.1em', 
+              fontWeight: 'bold', 
+              marginBottom: '15px', 
+              textAlign: 'center',
+              borderBottom: '1px solid rgba(245, 158, 11, 0.3)',
+              paddingBottom: '10px'
             }}>
-              "{token}"
-              {isScanning && scanningPosition === i && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1.2 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  style={{
-                    position: 'absolute',
-                    top: '-10px', left: '-10px', right: '-10px', bottom: '-10px',
-                    border: '3px solid #f59e0b', borderRadius: '12px', boxShadow: '0 0 20px rgba(245, 158, 11, 0.8)', pointerEvents: 'none'
-                  }}
-                />
+              vals
+            </div>
+            
+            {/* Display embedding values as a simple list */}
+            <div style={{ fontSize: '0.9em', lineHeight: '1.4' }}>
+              {embeddingVectors.length > 0 && embeddingVectors[0] ? (
+                embeddingVectors[0].slice(0, 12).map((val, idx) => (
+                  <motion.div 
+                    key={idx} 
+                    initial={{ opacity: 0.5, x: -10 }}
+                    animate={{ 
+                      opacity: 1, 
+                      x: 0,
+                      color: isScanning ? '#f59e0b' : '#cbd5e1',
+                      scale: isScanning ? 1.05 : 1
+                    }}
+                    transition={{ duration: 0.3, delay: idx * 0.03 }}
+                    style={{ 
+                      padding: '2px 0',
+                      fontWeight: isScanning ? 'bold' : 'normal',
+                      borderLeft: isScanning ? '3px solid #f59e0b' : '3px solid transparent',
+                      paddingLeft: '8px',
+                      marginBottom: '1px'
+                    }}
+                  >
+                    {val.toFixed(4)}
+                  </motion.div>
+                ))
+              ) : (
+                <div style={{ color: '#64748b', textAlign: 'center', padding: '20px' }}>
+                  {embeddingVectors.length === 0 ? 
+                    "[Loading embeddings...]" : 
+                    `[Debug: embeddingVectors.length=${embeddingVectors.length}]`
+                  }
+                  <br />
+                  <small style={{ fontSize: '0.7em', color: '#9ca3af' }}>
+                    Block: {currentBlockIndex} | Sentence: "{sentence?.slice(0, 20)}..."
+                  </small>
+                </div>
               )}
-              {isScanning && scanningPosition === i && (
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: '40px' }}
-                  style={{
-                    position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', width: '4px', background: 'linear-gradient(to bottom, #f59e0b, transparent)', borderRadius: '2px', boxShadow: '0 0 10px rgba(245, 158, 11, 0.6)'
-                  }}
-                />
+              
+              {embeddingVectors.length > 0 && embeddingVectors[0] && embeddingVectors[0].length > 12 && (
+                <div style={{ 
+                  color: '#9ca3af', 
+                  fontSize: '0.8em', 
+                  marginTop: '8px', 
+                  textAlign: 'center',
+                  borderTop: '1px solid rgba(156, 163, 175, 0.2)',
+                  paddingTop: '8px'
+                }}>
+                  ... and {embeddingVectors[0].length - 12} more values
+                </div>
               )}
             </div>
-          ))}
-          {isScanning && (
-            <motion.div
-              initial={{ x: -100, y: -80 }}
-              animate={{ x: scanningPosition * 95 - 50, y: -80 }}
-              transition={{ type: "spring", stiffness: 100, damping: 20, duration: 0.4 }}
-              style={{ position: 'absolute', width: '60px', height: '40px', background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1f2937', fontWeight: 'bold', fontSize: '0.9em', boxShadow: '0 0 20px rgba(245, 158, 11, 0.8)', border: '2px solid #f59e0b', zIndex: 10 }}>
-                👁️
-            </motion.div>
-          )}
+          </div>
         </div>
+        
         {isScanning && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', color: '#f59e0b', fontSize: '1.1em', fontWeight: 'bold', marginTop: '20px' }}>
-            Analyzing context... Token {scanningPosition + 1} of {tokens.length}
-          </motion.div>
-        )}
-        {!isScanning && !showHeatmap && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', color: '#10b981', fontSize: '1.1em', fontWeight: 'bold', marginTop: '20px' }}>
-            ✅ Context analysis complete! Generating attention weights...
+            🧠 Processing Transformer Block {currentBlockIndex}... 
+            <br />
+            <span style={{ fontSize: '0.9em', color: '#fbbf24' }}>
+              Embedding vectors are updating with new values!
+            </span>
+            <br />
+            <small style={{ fontSize: '0.7em', color: '#9ca3af', marginTop: '8px', display: 'block' }}>
+              💡 If stuck on "Loading embeddings...", make sure backend is running on port 8000
+            </small>
           </motion.div>
         )}
       </div>
@@ -370,40 +498,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
           margin: '0 auto',
           padding: '0 40px'
         }}>
-          {/* Input Tokens */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            style={{
-              marginBottom: '40px',
-              textAlign: 'center'
-            }}
-          >
-            <h4 style={{ color: '#60a5fa', fontSize: '1.5em', marginBottom: '20px' }}>
-              Input Tokens
-            </h4>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
-              {tokens.map((token, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  style={{
-                    background: `linear-gradient(135deg, ${tokenColors[i % tokenColors.length]}44, ${tokenColors[i % tokenColors.length]}22)`,
-                    border: `2px solid ${tokenColors[i % tokenColors.length]}`,
-                    borderRadius: '8px',
-                    padding: '12px 16px',
-                    color: tokenColors[i % tokenColors.length],
-                    fontWeight: 'bold'
-                  }}
-                >
-                  "{token}"
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+
 
           {/* Flow Arrow */}
           <motion.div
@@ -449,7 +544,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
               fontWeight: 'bold',
               fontSize: '1.2em'
             }}>
-              Transformer Block {blockIndex}
+              Transformer Block
             </div>
 
             {/* Stage 1: Multi-Head Self-Attention */}
@@ -470,19 +565,20 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
               }}
             >
               <h3 style={{
-                color: '#60a5fa',
-                fontSize: '1.6em',
-                marginBottom: '15px',
-                textAlign: 'center'
+                color: '#f59e0b',
+                fontWeight: 'bold',
+                fontSize: '2em',
+                textAlign: 'center',
+                textShadow: '0 0 12px rgba(245, 158, 11, 0.6)',
+                marginBottom: '15px'
               }}>
                 Multi-Head Self-Attention
               </h3>
               
-              {/* Attention visualization - scanning or heatmap */}
+              {/* Attention visualization - scanning only */}
               {flowStep >= 1 && (
                 <>
-                  {isScanning && renderScanningAnimation()}
-                  {showHeatmap && !isScanning && renderAttentionHeatmap()}
+                  {renderScanningAnimation()}
                 </>
               )}
             </motion.div>
@@ -519,10 +615,12 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
               }}
             >
               <h3 style={{
-                color: '#a78bfa',
-                fontSize: '1.6em',
-                marginBottom: '15px',
-                textAlign: 'center'
+                color: '#f59e0b',
+                fontWeight: 'bold',
+                fontSize: '2em',
+                textAlign: 'center',
+                textShadow: '0 0 12px rgba(245, 158, 11, 0.6)',
+                marginBottom: '15px'
               }}>
                 Feedforward Neural Network (FFN)
               </h3>
@@ -632,8 +730,11 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
             }}
           >
             <h3 style={{
-              color: '#34d399',
+              color: '#f59e0b',
+              fontWeight: 'bold',
               fontSize: '2em',
+              textAlign: 'center',
+              textShadow: '0 0 12px rgba(245, 158, 11, 0.6)',
               marginBottom: '15px'
             }}>
               Final Transformer Output Vector
