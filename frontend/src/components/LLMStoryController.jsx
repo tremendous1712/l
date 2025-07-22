@@ -5,7 +5,7 @@ import { LLMScene } from "./LLMScene";
 import { TokenizationViewWeb } from "./TokenizationViewWeb";
 import { Embeddings3D } from "./Embeddings3D";
 import { AttentionView } from "./AttentionView";
-import { SoftmaxViewWeb } from "./SoftmaxViewWeb";
+import { SoftmaxView } from "./SoftmaxView";
 import { ResidualStreamView } from "./ResidualStreamView";
 
 /**
@@ -69,7 +69,7 @@ export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention,
       {step === 3 && (
         <div className="softmax-container">
           {nextToken ? (
-            <SoftmaxViewWeb nextToken={nextToken} />
+            <SoftmaxView nextToken={nextToken} />
           ) : (
             <div style={{ 
               color: '#f87171', 

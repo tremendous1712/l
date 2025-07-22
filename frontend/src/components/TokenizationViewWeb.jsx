@@ -19,17 +19,6 @@ export const TokenizationViewWeb = ({ sentence, tokens, inputIds, embeddings }) 
   const idStepRef = React.useRef(null);
   const embeddingStepRef = React.useRef(null);
 
-  // Debug info
-  console.log('TokenizationView Data:', {
-    sentence,
-    tokens: tokens?.length,
-    inputIds: inputIds?.length, 
-    embeddings: embeddings?.length,
-    tokensArray: tokens,
-    inputIdsArray: inputIds,
-    embeddingsFirst: embeddings?.[0]?.slice(0, 3)
-  });
-
   // Define colors for tokens
   const tokenColors = [
     '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
