@@ -171,6 +171,18 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
       setEmbeddingVectors([]); // Start with empty embeddings
       setScanPass(0);
       
+      // Load initial layer 0 embeddings to avoid showing all zeros
+      const loadInitialEmbeddings = async () => {
+        const initialEmbeddings = await fetchEmbeddingForBlock(0);
+        if (initialEmbeddings && initialEmbeddings.length > 0) {
+          setEmbeddingVectors(initialEmbeddings.slice(0, 5)); // Show first 5 tokens
+          console.log("🎯 Loaded initial layer 0 embeddings:", initialEmbeddings.slice(0, 5));
+        }
+      };
+      
+      // Load initial embeddings first
+      loadInitialEmbeddings();
+      
       // Start scanning animation with back-and-forth movement
       const startScanning = async () => {
         setFlowStep(1);
@@ -240,8 +252,8 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
         setTimeout(() => {
           setFlowStep(3);
           scrollToSection(ffnRef);
-        }, 3000);   // FFN
-        setTimeout(() => setFlowStep(4), 5000);   // Final Residual + LayerNorm
+        }, 5000);   // FFN - wait 2 seconds after residual stream appears (1000 + 2000 = 3000ms delay from residual)
+        setTimeout(() => setFlowStep(4), 7000);   // Final Residual + LayerNorm
       };
       
       setTimeout(startScanning, 1000);
