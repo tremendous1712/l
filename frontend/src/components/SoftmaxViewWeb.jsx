@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useSpring, animated, useTrail } from "@react-spring/web";
 
 /**
  * Web-based softmax process visualization (no Three.js)
@@ -12,11 +11,9 @@ import { useSpring, animated, useTrail } from "@react-spring/web";
 export const SoftmaxViewWeb = ({ nextToken }) => {
   const [flowStep, setFlowStep] = useState(0); // 0: logits, 1: arrow to transform, 2: transformation, 3: arrow to probs, 4: probabilities
   const [temperature, setTemperature] = useState(1.0);
-  const [scanningComplete, setScanningComplete] = useState(false);
-  const [scanning85Percent, setScanning85Percent] = useState(false);
+  const [scanning85Percent, setScanning85Percent] = useState(false); // Actually 90% now - controls when probabilities appear
 
   // Refs for scrolling to each step
-  const logitsStepRef = React.useRef(null);
   const transformationStepRef = React.useRef(null);
   const probabilitiesStepRef = React.useRef(null);
   const probGraphRef = React.useRef(null);
@@ -31,7 +28,6 @@ export const SoftmaxViewWeb = ({ nextToken }) => {
   useEffect(() => {
     if (nextToken?.probs) {
       setFlowStep(0);
-      setScanningComplete(false);
       setScanning85Percent(false);
       
       // Immediately scroll to center the network animation
@@ -57,7 +53,7 @@ export const SoftmaxViewWeb = ({ nextToken }) => {
       
       // Mark scanning as complete 
       setTimeout(() => {
-        setScanningComplete(true);
+        // Animation completes
       }, 3000); // Full 2s animation + 1s start delay
       
       // Stage 3: Show probabilities after scanning completes

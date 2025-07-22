@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Html } from '@react-three/drei';
 import { LLMScene } from "./LLMScene";
 
-import { TokenizationView } from "./TokenizationViewWeb";
+import { TokenizationViewWeb } from "./TokenizationViewWeb";
 import { Embeddings3D } from "./Embeddings3D";
 import { AttentionView } from "./AttentionView";
 import { SoftmaxViewWeb } from "./SoftmaxViewWeb";
@@ -56,7 +56,7 @@ export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention,
       {/* Tokenization View - Normal DOM Layout */}
       {step === 0 && (
         <div className="tokenization-container">
-          <TokenizationView
+          <TokenizationViewWeb
             sentence={inputText}
             tokens={tokens}
             inputIds={tokenData?.input_ids}
