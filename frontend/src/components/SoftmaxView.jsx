@@ -18,12 +18,13 @@ import { useSpring, animated } from "@react-spring/three";
  */
 export const SoftmaxView = ({ nextToken }) => {
   const [showBars, setShowBars] = useState(false);
-  
+  const [temperature, setTemperature] = useState(1.0);
+
   useEffect(() => {
     setShowBars(false);
     const timer = setTimeout(() => setShowBars(true), 1000);
     return () => clearTimeout(timer);
-  }, [nextToken]);
+  }, [nextToken, temperature]);
 
   if (!nextToken || !nextToken.probs) {
     return (
@@ -32,12 +33,25 @@ export const SoftmaxView = ({ nextToken }) => {
       </Html>
     );
   }
-  
-  const { probs, token, token_id } = nextToken;
-  const maxProb = Math.max(...probs.map(p => p.prob));
-  
+
+  // Apply temperature scaling to probabilities
+  const applyTemperature = (probs, temp) => {
+    if (temp === 1.0) return probs;
+    const logits = probs.map(p => Math.log(p.prob + 1e-12) / temp);
+    const maxLogit = Math.max(...logits);
+    const exp = logits.map(l => Math.exp(l - maxLogit));
+    const sumExp = exp.reduce((a, b) => a + b, 0);
+    return probs.map((p, i) => ({
+      ...p,
+      prob: exp[i] / sumExp
+    }));
+  };
+
+  const tempProbs = applyTemperature(nextToken.probs, temperature);
+  const maxProb = Math.max(...tempProbs.map(p => p.prob));
+
   // Animation springs for each bar
-  const barSprings = probs.map((p, i) => useSpring({
+  const barSprings = tempProbs.map((p, i) => useSpring({
     scaleY: showBars ? p.prob / maxProb : 0,
     config: { mass: 1, tension: 280, friction: 60 }
   }));
@@ -51,9 +65,36 @@ export const SoftmaxView = ({ nextToken }) => {
         </div>
       </Html>
 
+      {/* Temperature slider */}
+      <Html center position={[6, 3, 0]}>
+        <div style={{ 
+          background: "rgba(0,0,0,0.7)", 
+          padding: "10px 18px", 
+          borderRadius: "8px", 
+          color: "#fff", 
+          fontSize: "1em", 
+          textAlign: "center",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.3)"
+        }}>
+          <label htmlFor="temp-slider" style={{ marginRight: 10 }}>
+            Temperature: <span style={{ color: "#f59e42", fontWeight: "bold" }}>{temperature.toFixed(2)}</span>
+          </label>
+          <input
+            id="temp-slider"
+            type="range"
+            min="0.5"
+            max="2.0"
+            step="0.01"
+            value={temperature}
+            onChange={e => setTemperature(Number(e.target.value))}
+            style={{ verticalAlign: "middle", width: 120 }}
+          />
+        </div>
+      </Html>
+
       {/* Bars - centered in 3D space */}
-      {probs.map((prob, i) => (
-        <group key={i} position={[(i * 1.2) - ((probs.length * 1.2) / 2), 0, 0]}>
+      {tempProbs.map((prob, i) => (
+        <group key={i} position={[(i * 1.2) - ((tempProbs.length * 1.2) / 2), 0, 0]}>
           <animated.mesh 
             position-y={barSprings[i].scaleY.to(s => s * 2)}
             scale={barSprings[i].scaleY.to(s => [1, s, 1])}
@@ -89,7 +130,7 @@ export const SoftmaxView = ({ nextToken }) => {
           transform: "translateX(-50%)"
         }}>
           <strong>Next Token:</strong>{" "}
-          <span style={{ color: "#f59e42" }}>{token}</span>
+          <span style={{ color: "#f59e42" }}>{nextToken.token}</span>
         </div>
       </Html>
     </group>

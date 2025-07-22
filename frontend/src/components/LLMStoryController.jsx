@@ -5,7 +5,8 @@ import { LLMScene } from "./LLMScene";
 import { TokenizationView } from "./TokenizationViewWeb";
 import { Embeddings3D } from "./Embeddings3D";
 import { AttentionView } from "./AttentionView";
-import { SoftmaxView } from "./SoftmaxView";
+import { SoftmaxViewWeb } from "./SoftmaxViewWeb";
+import { ResidualStreamView } from "./ResidualStreamView";
 
 /**
  * Navigation steps for the LLM visualization story
@@ -15,6 +16,7 @@ const STORY_STEPS = [
   { name: "Embeddings - 3D" },
   { name: "Attention" },
   { name: "Softmax" },
+  { name: "Residual Stream" },
 ];
 
 /**
@@ -63,8 +65,29 @@ export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention,
         </div>
       )}
 
-      {/* 3D Scene - Only for 3D visualizations */}
-      {step !== 0 && (
+      {/* Softmax View - Normal DOM Layout */}
+      {step === 3 && (
+        <div className="softmax-container">
+          {nextToken ? (
+            <SoftmaxViewWeb nextToken={nextToken} />
+          ) : (
+            <div style={{ 
+              color: '#f87171', 
+              textAlign: 'center', 
+              padding: '40px',
+              fontSize: '1.2em',
+              backgroundColor: '#111827',
+              minHeight: '100vh',
+              fontFamily: 'monospace'
+            }}>
+              No softmax data available
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3D Scene - Only for 3D visualizations (not for Tokenization, Softmax, or Residual Stream) */}
+      {step !== 0 && step !== 3 && step !== 4 && (
         <div className="scene-container">
           <LLMScene>
             {step === 1 && (
@@ -87,12 +110,14 @@ export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention,
                 <Html><div style={{ color: '#f87171' }}>No attention data</div></Html>
               )
             )}
-            {step === 3 && nextToken ? (
-              <SoftmaxView nextToken={nextToken} />
-            ) : step === 3 ? (
-              <Html><div style={{ color: '#f87171' }}>No softmax data</div></Html>
-            ) : null}
           </LLMScene>
+        </div>
+      )}
+
+      {/* Residual Stream View - 2D Chart */}
+      {step === 4 && (
+        <div style={{ padding: "20px", backgroundColor: "#1f2937", borderRadius: "12px", margin: "20px 0" }}>
+          <ResidualStreamView sentence={inputText} />
         </div>
       )}
     </div>

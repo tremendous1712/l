@@ -129,8 +129,11 @@ def next_token_prediction(input: TextInput):
             top_probs_list = top_probs.tolist()
             top_tokens = [tokenizer.decode([idx.item()]) for idx in top_indices]
             
+            # Get raw logits for the top 10 tokens (for softmax animation)
+            top_logits = next_token_logits[top_indices].tolist()
+            
             # Format probabilities for frontend
-            probs_list = [{"token": token.strip(), "prob": prob} for token, prob in zip(top_tokens, top_probs_list)]
+            probs_list = [{"token": token.strip(), "prob": prob, "logit": logit} for token, prob, logit in zip(top_tokens, top_probs_list, top_logits)]
             
             # Get the top token (highest probability)
             token = top_tokens[0].strip()
@@ -146,6 +149,45 @@ def next_token_prediction(input: TextInput):
     except Exception as e:
         print("/next_token error:", e)
         return {"token": "", "token_id": -1, "probability": 0.0, "probs": []}
+
+
+@app.post("/residual_stream")
+def get_residual_stream(input: TextInput):
+    """
+    Compute residual stream evolution (e.g., norm or PCA dimension) across GPT-2 layers.
+    
+    Returns:
+        dict: Each token gets an array of norm or PCA(1D) per layer
+    """
+    if tokenizer is None or model is None:
+        return {"layer_values": []}
+    try:
+        inputs = tokenizer(input.text, return_tensors="pt", add_special_tokens=True)
+        with torch.no_grad():
+            outputs = model(**inputs, output_hidden_states=True)
+        hidden_states = outputs.hidden_states  # List of tensors: [layer, 1, seq_len, hidden_dim]
+
+        # Convert each layer to [seq_len, hidden_dim] and calculate norm per token
+        token_layer_values = []  # List of token trajectories (each is [layer_0_val, layer_1_val, ..., layer_n_val])
+        num_tokens = hidden_states[0].shape[1]
+        num_layers = len(hidden_states)
+
+        for token_idx in range(num_tokens):
+            values_per_layer = []
+            for layer_idx in range(num_layers):
+                vec = hidden_states[layer_idx][0, token_idx]  # Shape: [hidden_dim]
+                values_per_layer.append(torch.norm(vec).item())  # Could also use vec[0].item() for PCA dim
+            token_layer_values.append(values_per_layer)
+
+        return {
+            "layer_values": token_layer_values,
+            "tokens": tokenizer.convert_ids_to_tokens(inputs["input_ids"][0]),
+            "num_layers": num_layers
+        }
+    except Exception as e:
+        print("Error in /residual_stream:", e)
+        return {"layer_values": [], "tokens": [], "num_layers": 0}
+
 
 @app.post("/attention")
 def get_attention(input: TextInput):

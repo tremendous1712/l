@@ -30,6 +30,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
+  const [submitted, setSubmitted] = useState("");
 
   // Reset all state values
   const resetState = useCallback(() => {
@@ -39,6 +40,7 @@ function App() {
     setNextTok(null);
     setError("");
     setRetryCount(0);
+    setSubmitted("");
   }, []);
 
   // Keyboard shortcuts
@@ -81,6 +83,7 @@ function App() {
       setAttData(attResult);
       setNextTok(nextResult);
       setRetryCount(0);
+      setSubmitted(inputText);  // ✅ Track submitted text for ResidualStreamView
     } catch (err) {
       if (retryCount < 2) {
         setRetryCount(retryCount + 1);
