@@ -34,6 +34,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
   const [isScanning, setIsScanning] = useState(false);
   const [scanningPosition, setScanningPosition] = useState(0);
   const [showHeatmap, setShowHeatmap] = useState(false);
+  const [scanPass, setScanPass] = useState(0); // Track current pass within a layer
   
   // Embedding evolution state
   const [embeddingVectors, setEmbeddingVectors] = useState([]);
@@ -42,6 +43,22 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
   // Residual stream state
   const [chartData, setChartData] = useState([]);
   const [residualTokens, setResidualTokens] = useState([]);
+
+  // Refs for autoscroll
+  const attentionRef = React.useRef(null);
+  const residualRef = React.useRef(null);
+  const ffnRef = React.useRef(null);
+
+  // Autoscroll function
+  const scrollToSection = (ref) => {
+    if (ref.current) {
+      ref.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+    }
+  };
 
   // Fetch residual stream data
   useEffect(() => {
@@ -92,39 +109,30 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
     if (sentence) fetchResiduals();
   }, [sentence]);
 
-  // Fetch embedding vectors for different transformer blocks
+  // Fetch embedding vectors for different transformer blocks from the backend
   const fetchEmbeddingForBlock = async (blockIndex) => {
     if (!sentence) return [];
     
     try {
-      console.log(`🔵 Fetching embeddings for block ${blockIndex}:`, sentence);
-      
-      // First test if backend is reachable
-      try {
-        const healthCheck = await axios.get("http://localhost:8000/health");
-        console.log(`💚 Backend health check OK:`, healthCheck.data);
-      } catch (healthErr) {
-        console.error(`💥 Backend health check failed:`, healthErr.message);
-        throw new Error("Backend server is not reachable");
-      }
+      console.log(`🔵 Fetching REAL embeddings for layer ${blockIndex}:`, sentence);
       
       const res = await axios.post("http://localhost:8000/embeddings", {
         text: sentence,
         layer: blockIndex
       });
 
-      console.log(`✅ Embeddings response for block ${blockIndex}:`, res.data);
+      console.log(`✅ Real embeddings response for layer ${blockIndex}:`, res.data);
       
-      // Return the actual embedding vectors for each token
+      // Return the actual embedding vectors for each token from GPT-2
       if (res.data && res.data.embeddings) {
-        console.log(`📊 Received ${res.data.embeddings.length} embedding vectors`);
+        console.log(`📊 Received ${res.data.embeddings.length} REAL embedding vectors from GPT-2`);
         return res.data.embeddings;
       } else {
-        console.warn(`⚠️ No embeddings in response for block ${blockIndex}:`, res.data);
+        console.warn(`⚠️ No embeddings in response for layer ${blockIndex}:`, res.data);
         return [];
       }
     } catch (err) {
-      console.error(`❌ Error loading embeddings for block ${blockIndex}:`, err);
+      console.error(`❌ Error loading REAL embeddings for layer ${blockIndex}:`, err);
       console.error(`❌ Error details:`, err.response?.data || err.message);
       return [];
     }
@@ -160,66 +168,88 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
       setShowHeatmap(false);
       setScanningPosition(0);
       setCurrentBlockIndex(0);
-      setEmbeddingVectors([]);
+      setEmbeddingVectors([]); // Start with empty embeddings
+      setScanPass(0);
       
-      // Animate through stages
-      const timeouts = [
-        setTimeout(async () => {
-          setFlowStep(1);
-          // Start attention scanning animation
-          setIsScanning(true);
-          setScanningPosition(0);
-          setCurrentBlockIndex(0);
-          
-          // Fetch initial embeddings for block 0
-          console.log("🚀 Starting embedding scanning...");
-          const initialEmbeddings = await fetchEmbeddingForBlock(0);
-          setEmbeddingVectors(initialEmbeddings);
-        }, 1000),
+      // Start scanning animation with back-and-forth movement
+      const startScanning = async () => {
+        setFlowStep(1);
+        setIsScanning(true);
         
-        // Scanning animation - progress through transformer blocks
-        setTimeout(async () => {
-          setCurrentBlockIndex(1);
-          const embeddings = await fetchEmbeddingForBlock(1);
-          setEmbeddingVectors(embeddings);
-          setScanningPosition(1);
-        }, 1500),
-        setTimeout(async () => {
-          setCurrentBlockIndex(2);
-          const embeddings = await fetchEmbeddingForBlock(2);
-          setEmbeddingVectors(embeddings);
-          setScanningPosition(2);
-        }, 2000),
-        setTimeout(async () => {
-          setCurrentBlockIndex(3);
-          const embeddings = await fetchEmbeddingForBlock(3);
-          setEmbeddingVectors(embeddings);
-          setScanningPosition(3);
-        }, 2500),
-        setTimeout(async () => {
-          setCurrentBlockIndex(4);
-          const embeddings = await fetchEmbeddingForBlock(4);
-          setEmbeddingVectors(embeddings);
-          setScanningPosition(4);
-        }, 3000),
-        setTimeout(async () => {
-          setCurrentBlockIndex(5);
-          const embeddings = await fetchEmbeddingForBlock(5);
-          setEmbeddingVectors(embeddings);
-          setScanningPosition(5);
-        }, 3500),
+        let currentLayer = 0;
+        let direction = 1; // 1 for forward, -1 for backward
+        
+        // Scan 5 times (layers 0-4)
+        for (let scanCount = 0; scanCount < 5; scanCount++) {
+          setCurrentBlockIndex(currentLayer);
+          
+          if (direction === 1) {
+            // Forward scan (0 to 4) - exactly 5 positions, stop at 4
+            for (let pos = 0; pos < 5; pos++) {
+              setScanningPosition(pos);
+              
+              // Update embeddings for the current position when scanner reaches it
+              const embeddings = await fetchEmbeddingForBlock(currentLayer);
+              if (embeddings && embeddings.length > pos && embeddings[pos]) {
+                setEmbeddingVectors(prev => {
+                  const updated = [...prev];
+                  updated[pos] = embeddings[pos];
+                  console.log(`Forward: Updated position ${pos} with layer ${currentLayer} embeddings`);
+                  return updated;
+                });
+              }
+              
+              await new Promise(resolve => setTimeout(resolve, 250)); // Faster and smoother
+            }
+          } else {
+            // Backward scan (4 to 0) - exactly 5 positions, stop at 0
+            for (let pos = 4; pos >= 0; pos--) {
+              setScanningPosition(pos);
+              
+              // Update embeddings for the current position when scanner reaches it
+              const embeddings = await fetchEmbeddingForBlock(currentLayer);
+              if (embeddings && embeddings.length > pos && embeddings[pos]) {
+                setEmbeddingVectors(prev => {
+                  const updated = [...prev];
+                  updated[pos] = embeddings[pos];
+                  console.log(`Backward: Updated position ${pos} with layer ${currentLayer} embeddings`);
+                  return updated;
+                });
+              }
+              
+              await new Promise(resolve => setTimeout(resolve, 250)); // Faster and smoother
+            }
+          }
+          
+          // Move to next layer and flip direction
+          currentLayer++;
+          direction *= -1;
+          
+          // Brief pause between scans
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
         
         // Complete scanning
-        setTimeout(() => {
-          setIsScanning(false);
-        }, 4000),
+        setIsScanning(false);
         
-        setTimeout(() => setFlowStep(2), 5000),   // Residual + LayerNorm
-        setTimeout(() => setFlowStep(3), 7000),   // FFN
-        setTimeout(() => setFlowStep(4), 9000),   // Final Residual + LayerNorm
-      ];
+        // Continue with rest of animation with autoscroll
+        setTimeout(() => {
+          setFlowStep(2);
+          scrollToSection(residualRef);
+        }, 1000);   // Residual + LayerNorm
+        setTimeout(() => {
+          setFlowStep(3);
+          scrollToSection(ffnRef);
+        }, 3000);   // FFN
+        setTimeout(() => setFlowStep(4), 5000);   // Final Residual + LayerNorm
+      };
       
-      return () => timeouts.forEach(clearTimeout);
+      setTimeout(startScanning, 1000);
+      
+      // Initial scroll to attention section
+      setTimeout(() => {
+        scrollToSection(attentionRef);
+      }, 1500);
     }
   }, [sentence]);
 
@@ -233,16 +263,125 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
   // Scanning animation with embedding vectors
   const renderScanningAnimation = () => {
     if (!tokens.length) return null;
+    
+    const displayTokens = tokens.slice(0, 5); // Show first 5 tokens
+    
     return (
       <div style={{
         background: 'rgba(15, 23, 42, 0.8)',
         borderRadius: '12px',
-        padding: '20px',
+        padding: '30px',
         border: '1px solid rgba(59, 130, 246, 0.3)',
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* ...existing code... */}
+        {/* Token Embeddings Display */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-around',
+          gap: '20px',
+          position: 'relative'
+        }}>
+          {displayTokens.map((token, index) => (
+            <div key={index} style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              minWidth: '160px',
+              position: 'relative'
+            }}>
+              {/* Embedding Values Display */}
+              <div style={{
+                background: '#1f2937',
+                border: '2px solid #374151',
+                borderRadius: '8px',
+                padding: '15px',
+                fontSize: '1em',
+                color: '#d1d5db',
+                textAlign: 'center',
+                minHeight: '120px',
+                width: '100%',
+                position: 'relative',
+                fontFamily: 'monospace'
+              }}>
+                {embeddingVectors && embeddingVectors[index] && embeddingVectors[index].length > 0 ? (
+                  <div style={{ lineHeight: '1.4' }}>
+                    <div style={{ 
+                      color: '#ffffff',
+                      fontSize: '1em',
+                      marginBottom: '3px'
+                    }}>
+                      [{embeddingVectors[index][0].toFixed(2)}
+                    </div>
+                    <div style={{ 
+                      color: '#ffffff',
+                      fontSize: '1em',
+                      marginBottom: '3px'
+                    }}>
+                      {embeddingVectors[index][1].toFixed(2)}
+                    </div>
+                    <div style={{ 
+                      color: '#ffffff',
+                      fontSize: '1em',
+                      marginBottom: '5px'
+                    }}>
+                      {embeddingVectors[index][2].toFixed(2)}
+                    </div>
+                    <div style={{ color: '#6b7280', fontSize: '0.9em', margin: '5px 0' }}>...</div>
+                    <div style={{ 
+                      color: '#ffffff',
+                      fontSize: '1em',
+                      marginBottom: '3px'
+                    }}>
+                      {embeddingVectors[index].slice(-2)[0].toFixed(2)}
+                    </div>
+                    <div style={{ 
+                      color: '#ffffff',
+                      fontSize: '1em'
+                    }}>
+                      {embeddingVectors[index].slice(-1)[0].toFixed(2)}]
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ 
+                    color: '#6b7280',
+                    fontSize: '1em',
+                    fontStyle: 'italic',
+                    paddingTop: '30px'
+                  }}>
+                    [0.00<br/>0.00<br/>0.00<br/>...<br/>0.00<br/>0.00]
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Green Glowing Scanner */}
+        {isScanning && (
+          <div style={{
+            position: 'absolute',
+            top: '30px',
+            bottom: '30px',
+            left: '30px',
+            right: '30px',
+            pointerEvents: 'none',
+            zIndex: 10
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              left: `${(scanningPosition * 20)}%`,
+              width: '20%',
+              background: 'linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.4), rgba(34, 197, 94, 0.6), rgba(34, 197, 94, 0.4), transparent)',
+              borderRadius: '8px',
+              boxShadow: '0 0 30px rgba(34, 197, 94, 0.8), inset 0 0 20px rgba(34, 197, 94, 0.3)',
+              animation: 'greenGlow 1.5s ease-in-out infinite',
+              transition: 'left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+            }} />
+          </div>
+        )}
       </div>
     );
 }
@@ -426,6 +565,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
 
             {/* Stage 1: Multi-Head Self-Attention */}
             <motion.div
+              ref={attentionRef}
               initial={{ opacity: 0, y: 20 }}
               animate={{ 
                 opacity: flowStep >= 1 ? 1 : 0,
@@ -511,6 +651,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
             {/* Residual Stream Visualization */}
             {flowStep >= 2 && (
               <motion.div
+                ref={residualRef}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
@@ -522,7 +663,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
 
             {/* Animated Blue Flow Arrow between Residual Stream and FFN */}
             {flowStep >= 3 && (
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px', position: 'relative', height: '70px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px', position: 'relative', height: '70px' }}>
                 <div style={{
                   width: '4px',
                   height: flowStep >= 3 ? '60px' : '0px',
@@ -568,6 +709,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
 
             {/* Stage 2: Feedforward Neural Network */}
             <motion.div
+              ref={ffnRef}
               initial={{ opacity: 0, y: 20 }}
               animate={{ 
                 opacity: flowStep >= 3 ? 1 : 0,
@@ -625,6 +767,20 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
           0% { top: -10px; opacity: 0; }
           50% { opacity: 1; }
           100% { top: 60px; opacity: 0; }
+        }
+        @keyframes scanPulse {
+          0%, 100% { opacity: 0.7; transform: scaleX(1); }
+          50% { opacity: 1; transform: scaleX(1.2); }
+        }
+        @keyframes greenGlow {
+          0%, 100% { 
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.8), inset 0 0 20px rgba(34, 197, 94, 0.3);
+            opacity: 0.6;
+          }
+          50% { 
+            box-shadow: 0 0 50px rgba(34, 197, 94, 1), inset 0 0 30px rgba(34, 197, 94, 0.5);
+            opacity: 0.8;
+          }
         }
       `}</style>
     </>

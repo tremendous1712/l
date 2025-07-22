@@ -48,6 +48,11 @@ class TextInput(BaseModel):
     """Request model for text input endpoints"""
     text: str
 
+class EmbeddingInput(BaseModel):
+    """Request model for embedding endpoints with layer specification"""
+    text: str
+    layer: int = 0  # Default to layer 0
+
 
 @app.post("/tokenize")
 def tokenize_text(input: TextInput):
@@ -218,9 +223,51 @@ def get_attention(input: TextInput):
         return {"num_layers": 0, "attentions": []}
 
 @app.post("/embeddings")
-def get_embeddings(input: TextInput):
+def get_embeddings(input: EmbeddingInput):
     """
-    Extract hidden states and compute 3D embeddings using PCA
+    Extract hidden states and return embeddings from a specific layer
+    
+    Args:
+        input: EmbeddingInput object containing text and layer number
+        
+    Returns:
+        dict: Contains embeddings from the specified layer
+    """
+    if tokenizer is None or model is None:
+        print("/embeddings error: model/tokenizer not loaded")
+        return {"embeddings": [], "layer": input.layer}
+    
+    try:
+        inputs = tokenizer(input.text, return_tensors="pt", add_special_tokens=True)
+        with torch.no_grad():
+            outputs = model(**inputs)
+        
+        hidden_states = outputs.hidden_states if hasattr(outputs, 'hidden_states') else []
+        
+        if not hidden_states:
+            return {"embeddings": [], "layer": input.layer}
+        
+        # Get the specified layer (clamp to valid range)
+        layer_idx = max(0, min(input.layer, len(hidden_states) - 1))
+        layer_embeddings = hidden_states[layer_idx].squeeze(0).tolist()  # [seq_len, hidden_dim]
+        
+        print(f"✅ Returning embeddings for layer {layer_idx}, shape: {len(layer_embeddings)} tokens")
+        
+        return {
+            "embeddings": layer_embeddings,
+            "layer": layer_idx,
+            "num_tokens": len(layer_embeddings),
+            "embedding_dim": len(layer_embeddings[0]) if layer_embeddings else 0
+        }
+        
+    except Exception as e:
+        print("/embeddings error:", e)
+        return {"embeddings": [], "layer": input.layer}
+
+@app.post("/embeddings_all")
+def get_all_embeddings(input: TextInput):
+    """
+    Extract hidden states and compute 3D embeddings using PCA from all layers
     
     Args:
         input: TextInput object containing text to analyze
@@ -229,7 +276,7 @@ def get_embeddings(input: TextInput):
         dict: Contains hidden states from all layers and 3D PCA embeddings
     """
     if tokenizer is None or model is None:
-        print("/embeddings error: model/tokenizer not loaded")
+        print("/embeddings_all error: model/tokenizer not loaded")
         return {"num_layers": 0, "hidden_states": [], "embeddings3d": []}
     try:
         inputs = tokenizer(input.text, return_tensors="pt", add_special_tokens=True)
@@ -255,7 +302,7 @@ def get_embeddings(input: TextInput):
             "embeddings3d": embeddings3d if isinstance(embeddings3d, list) else []
         }
     except Exception as e:
-        print("/embeddings error:", e)
+        print("/embeddings_all error:", e)
         return {"num_layers": 0, "hidden_states": [], "embeddings3d": []}
 
 @app.get("/health")

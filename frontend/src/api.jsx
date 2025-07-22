@@ -28,7 +28,7 @@ export const fetchTokenData = async (text) => {
  * @returns {Promise<Object>} Hidden states and 3D embeddings data
  */
 export const fetchEmbeddings = async (text) => {
-  const response = await axios.post(`${API_BASE}/embeddings`, { text });
+  const response = await axios.post(`${API_BASE}/embeddings_all`, { text });
   return response.data;
 };
 
