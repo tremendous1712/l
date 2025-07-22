@@ -242,123 +242,10 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
         position: 'relative',
         overflow: 'hidden'
       }}>
-        <h4 style={{
-          color: '#fbbf24',
-          textShadow: '0 0 8px #f59e0b, 0 0 16px #fbbf24',
-          margin: '0 0 20px 0',
-          textAlign: 'center',
-          fontWeight: 'bold',
-          fontSize: '2.2em',
-          letterSpacing: '0.03em',
-          background: 'linear-gradient(90deg, #fbbf24 60%, #f59e0b 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          filter: 'drop-shadow(0 0 6px #fbbf24)',
-        }}>
-          Embedding Evolution
-        </h4>
-        
-        {/* Current Block Indicator */}
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <span style={{ color: '#f59e0b', fontSize: '1.2em', fontWeight: 'bold' }}>
-            Processing Block: {currentBlockIndex}
-          </span>
-        </div>
-        
-        {/* Embedding Vector Display */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px', position: 'relative' }}>
-          {/* Embedding Values List */}
-          <div style={{
-            background: 'rgba(15, 23, 42, 0.9)',
-            border: '2px solid #f59e0b',
-            borderRadius: '12px',
-            padding: '20px',
-            minWidth: '300px',
-            maxWidth: '500px',
-            fontFamily: 'monospace'
-          }}>
-            <div style={{ 
-              color: '#f59e0b', 
-              fontSize: '1.1em', 
-              fontWeight: 'bold', 
-              marginBottom: '15px', 
-              textAlign: 'center',
-              borderBottom: '1px solid rgba(245, 158, 11, 0.3)',
-              paddingBottom: '10px'
-            }}>
-              vals
-            </div>
-            
-            {/* Display embedding values as a simple list */}
-            <div style={{ fontSize: '0.9em', lineHeight: '1.4' }}>
-              {embeddingVectors.length > 0 && embeddingVectors[0] ? (
-                embeddingVectors[0].slice(0, 12).map((val, idx) => (
-                  <motion.div 
-                    key={idx} 
-                    initial={{ opacity: 0.5, x: -10 }}
-                    animate={{ 
-                      opacity: 1, 
-                      x: 0,
-                      color: isScanning ? '#f59e0b' : '#cbd5e1',
-                      scale: isScanning ? 1.05 : 1
-                    }}
-                    transition={{ duration: 0.3, delay: idx * 0.03 }}
-                    style={{ 
-                      padding: '2px 0',
-                      fontWeight: isScanning ? 'bold' : 'normal',
-                      borderLeft: isScanning ? '3px solid #f59e0b' : '3px solid transparent',
-                      paddingLeft: '8px',
-                      marginBottom: '1px'
-                    }}
-                  >
-                    {val.toFixed(4)}
-                  </motion.div>
-                ))
-              ) : (
-                <div style={{ color: '#64748b', textAlign: 'center', padding: '20px' }}>
-                  {embeddingVectors.length === 0 ? 
-                    "[Loading embeddings...]" : 
-                    `[Debug: embeddingVectors.length=${embeddingVectors.length}]`
-                  }
-                  <br />
-                  <small style={{ fontSize: '0.7em', color: '#9ca3af' }}>
-                    Block: {currentBlockIndex} | Sentence: "{sentence?.slice(0, 20)}..."
-                  </small>
-                </div>
-              )}
-              
-              {embeddingVectors.length > 0 && embeddingVectors[0] && embeddingVectors[0].length > 12 && (
-                <div style={{ 
-                  color: '#9ca3af', 
-                  fontSize: '0.8em', 
-                  marginTop: '8px', 
-                  textAlign: 'center',
-                  borderTop: '1px solid rgba(156, 163, 175, 0.2)',
-                  paddingTop: '8px'
-                }}>
-                  ... and {embeddingVectors[0].length - 12} more values
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        {isScanning && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', color: '#f59e0b', fontSize: '1.1em', fontWeight: 'bold', marginTop: '20px' }}>
-            🧠 Processing Transformer Block {currentBlockIndex}... 
-            <br />
-            <span style={{ fontSize: '0.9em', color: '#fbbf24' }}>
-              Embedding vectors are updating with new values!
-            </span>
-            <br />
-            <small style={{ fontSize: '0.7em', color: '#9ca3af', marginTop: '8px', display: 'block' }}>
-              💡 If stuck on "Loading embeddings...", make sure backend is running on port 8000
-            </small>
-          </motion.div>
-        )}
+        {/* ...existing code... */}
       </div>
     );
-  };
+}
 
   // Render attention heatmap (after scanning)
   const renderAttentionHeatmap = () => {
@@ -500,17 +387,7 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
         }}>
 
 
-          {/* Flow Arrow */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: flowStep >= 1 ? 1 : 0 }}
-            style={{ textAlign: 'center', margin: '30px 0' }}
-          >
-            <svg width="60" height="60" viewBox="0 0 60 60">
-              <path d="M30 10 v40" stroke="#f59e0b" strokeWidth="4" />
-              <polygon points="20,45 40,45 30,55" fill="#f59e0b" />
-            </svg>
-          </motion.div>
+          {/* Flow Arrow removed as requested */}
 
           {/* Transformer Block Container */}
           <motion.div
@@ -574,7 +451,6 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
               }}>
                 Multi-Head Self-Attention
               </h3>
-              
               {/* Attention visualization - scanning only */}
               {flowStep >= 1 && (
                 <>
@@ -582,6 +458,52 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
                 </>
               )}
             </motion.div>
+
+            {/* Animated Blue Flow Arrow between Attention and Residual Stream */}
+            {flowStep >= 2 && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px', position: 'relative', height: '70px' }}>
+                <div style={{
+                  width: '4px',
+                  height: flowStep >= 2 ? '60px' : '0px',
+                  background: flowStep >= 2 ? '#3b82f6' : '#374151',
+                  borderRadius: '2px',
+                  boxShadow: flowStep >= 2 ? '0 0 16px #3b82f6' : 'none',
+                  transition: 'height 1.2s cubic-bezier(0.4,0,0.2,1), background 0.5s',
+                  position: 'relative',
+                  animation: flowStep === 2 ? 'drawArrow 1.2s cubic-bezier(0.4,0,0.2,1)' : 'none'
+                }}>
+                  {/* Flowing particle */}
+                  {flowStep === 2 && (
+                    <div style={{
+                      position: 'absolute',
+                      width: '12px',
+                      height: '12px',
+                      background: '#3b82f6',
+                      borderRadius: '50%',
+                      left: '-4px',
+                      top: '0px',
+                      boxShadow: '0 0 18px #3b82f6',
+                      animation: 'flowDown1 1.1s ease-in-out',
+                      zIndex: 2
+                    }} />
+                  )}
+                  {/* Arrowhead */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-8px',
+                    left: '-6px',
+                    width: '16px',
+                    height: '16px',
+                    background: '#3b82f6',
+                    transform: 'rotate(45deg)',
+                    borderRadius: '2px',
+                    boxShadow: '0 0 10px #3b82f6',
+                    opacity: flowStep >= 2 ? 1 : 0,
+                    transition: 'opacity 0.5s'
+                  }} />
+                </div>
+              </div>
+            )}
 
             {/* Residual Connection + LayerNorm Arrow and Process */}
             {/* Removed Residual + LayerNorm arc and arrow as requested. Addition symbol retained. */}
@@ -598,6 +520,52 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
               </motion.div>
             )}
 
+            {/* Animated Blue Flow Arrow between Residual Stream and FFN */}
+            {flowStep >= 3 && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px', position: 'relative', height: '70px' }}>
+                <div style={{
+                  width: '4px',
+                  height: flowStep >= 3 ? '60px' : '0px',
+                  background: flowStep >= 3 ? '#3b82f6' : '#374151',
+                  borderRadius: '2px',
+                  boxShadow: flowStep >= 3 ? '0 0 16px #3b82f6' : 'none',
+                  transition: 'height 1.2s cubic-bezier(0.4,0,0.2,1), background 0.5s',
+                  position: 'relative',
+                  animation: flowStep === 3 ? 'drawArrow 1.2s cubic-bezier(0.4,0,0.2,1)' : 'none'
+                }}>
+                  {/* Flowing particle */}
+                  {flowStep === 3 && (
+                    <div style={{
+                      position: 'absolute',
+                      width: '12px',
+                      height: '12px',
+                      background: '#3b82f6',
+                      borderRadius: '50%',
+                      left: '-4px',
+                      top: '0px',
+                      boxShadow: '0 0 18px #3b82f6',
+                      animation: 'flowDown1 1.1s ease-in-out',
+                      zIndex: 2
+                    }} />
+                  )}
+                  {/* Arrowhead */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-8px',
+                    left: '-6px',
+                    width: '16px',
+                    height: '16px',
+                    background: '#3b82f6',
+                    transform: 'rotate(45deg)',
+                    borderRadius: '2px',
+                    boxShadow: '0 0 10px #3b82f6',
+                    opacity: flowStep >= 3 ? 1 : 0,
+                    transition: 'opacity 0.5s'
+                  }} />
+                </div>
+              </div>
+            )}
+
             {/* Stage 2: Feedforward Neural Network */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -611,7 +579,12 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
                 borderRadius: '12px',
                 border: '2px solid #8b5cf6',
                 padding: '25px',
-                marginBottom: '30px'
+                marginBottom: '30px',
+                minHeight: '320px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
             >
               <h3 style={{
@@ -624,168 +597,14 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
               }}>
                 Feedforward Neural Network (FFN)
               </h3>
-              
-              {/* FFN diagram */}
-              <div style={{
-                background: 'rgba(139, 92, 246, 0.1)',
-                borderRadius: '12px',
-                padding: '25px',
-                border: '1px solid rgba(139, 92, 246, 0.3)'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      width: '50px',
-                      height: '50px',
-                      background: '#8b5cf6',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#ffffff',
-                      fontWeight: 'bold',
-                      margin: '0 auto 8px'
-                    }}>
-                      d
-                    </div>
-                    <div style={{ color: '#a78bfa', fontSize: '0.8em' }}>Input</div>
-                  </div>
-                  
-                  <div style={{ color: '#f59e0b', fontSize: '1.5em' }}>→</div>
-                  
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      width: '60px',
-                      height: '60px',
-                      background: '#ec4899',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#ffffff',
-                      fontWeight: 'bold',
-                      margin: '0 auto 8px',
-                      fontSize: '0.9em'
-                    }}>
-                      4d
-                    </div>
-                    <div style={{ color: '#ec4899', fontSize: '0.8em' }}>Hidden</div>
-                  </div>
-                  
-                  <div style={{ color: '#f59e0b', fontSize: '1.5em' }}>→</div>
-                  
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      width: '50px',
-                      height: '50px',
-                      background: '#8b5cf6',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#ffffff',
-                      fontWeight: 'bold',
-                      margin: '0 auto 8px'
-                    }}>
-                      d
-                    </div>
-                    <div style={{ color: '#a78bfa', fontSize: '0.8em' }}>Output</div>
-                  </div>
-                </div>
-              </div>
+              {/* FFN visual: two rows of circles with lines connecting them */}
+              <FFNDiagram />
             </motion.div>
 
             {/* Second Residual Connection + LayerNorm */}
             {/* Removed Residual + LayerNorm arc and arrow as requested. Addition symbol retained. */}
           </motion.div>
 
-          {/* Flow Arrow pointing to Final Output */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: flowStep >= 4 ? 1 : 0 }}
-            transition={{ duration: 0.6, delay: 1 }}
-            style={{ textAlign: 'center', margin: '30px 0' }}
-          >
-            <svg width="60" height="60" viewBox="0 0 60 60">
-              <path d="M30 10 v40" stroke="#f59e0b" strokeWidth="6" />
-              <polygon points="20,45 40,45 30,55" fill="#f59e0b" />
-            </svg>
-          </motion.div>
-
-          {/* Final Transformer Output Vector */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ 
-              opacity: flowStep >= 4 ? 1 : 0,
-              y: flowStep >= 4 ? 0 : 30
-            }}
-            transition={{ duration: 0.8, delay: 1.2 }}
-            style={{
-              background: '#0f172a',
-              borderRadius: '16px',
-              border: '3px solid #10b981',
-              padding: '30px',
-              textAlign: 'center',
-              boxShadow: '0 0 30px rgba(16, 185, 129, 0.3)'
-            }}
-          >
-            <h3 style={{
-              color: '#f59e0b',
-              fontWeight: 'bold',
-              fontSize: '2em',
-              textAlign: 'center',
-              textShadow: '0 0 12px rgba(245, 158, 11, 0.6)',
-              marginBottom: '15px'
-            }}>
-              Final Transformer Output Vector
-            </h3>
-            <div style={{
-              color: '#cbd5e1',
-              fontSize: '1.2em',
-              marginBottom: '20px'
-            }}>
-              Enhanced token representations ready for the next layer
-            </div>
-
-            {/* Enhanced Output Tokens */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
-              {tokens.map((token, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 1.4 + i * 0.1 }}
-                  style={{
-                    background: `linear-gradient(135deg, ${tokenColors[i % tokenColors.length]}66, ${tokenColors[i % tokenColors.length]}44)`,
-                    border: `2px solid ${tokenColors[i % tokenColors.length]}`,
-                    borderRadius: '10px',
-                    padding: '12px 16px',
-                    color: '#ffffff',
-                    fontWeight: 'bold',
-                    boxShadow: `0 0 20px ${tokenColors[i % tokenColors.length]}44`,
-                    position: 'relative'
-                  }}
-                >
-                  "{token}"
-                  <div style={{
-                    position: 'absolute',
-                    top: '-5px',
-                    right: '-5px',
-                    width: '20px',
-                    height: '20px',
-                    background: '#10b981',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.8em'
-                  }}>
-                    ✨
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
         </div>
       </div>
 
@@ -794,10 +613,18 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
           0%, 100% { opacity: 1; }
           50% { opacity: 0.7; }
         }
-        
         @keyframes glow {
           0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
           50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.6); }
+        }
+        @keyframes drawArrow {
+          0% { height: 0px; }
+          100% { height: 60px; }
+        }
+        @keyframes flowDown1 {
+          0% { top: -10px; opacity: 0; }
+          50% { opacity: 1; }
+          100% { top: 60px; opacity: 0; }
         }
       `}</style>
     </>
@@ -805,3 +632,65 @@ export const TransformerBlockVisualizer = ({ blockIndex = 1, sentence, attention
 };
 
 export default TransformerBlockVisualizer;
+
+// FFN diagram as a separate component
+function FFNDiagram() {
+  const nodeCount = 5;
+  const nodeRadius = 40;
+  const svgWidth = 900;
+  const svgHeight = 340;
+  // Three rows
+  const rowCount = 3;
+  const rowYs = [60, 170, 280]; // increased vertical spacing
+  const nodeSpacing = 100 + nodeRadius * 2; // horizontal gap
+  const centerX = svgWidth / 2;
+  const middleIndex = Math.floor(nodeCount / 2);
+  // Generate nodes for each row
+  const rows = Array.from({length: rowCount}, (_, rowIdx) =>
+    Array.from({length: nodeCount}, (_, i) => ({
+      x: centerX + (i - middleIndex) * nodeSpacing,
+      y: rowYs[rowIdx]
+    }))
+  );
+  return (
+    <div style={{ position: 'relative', width: '100%', height: `${svgHeight}px`, margin: '0 auto' }}>
+      {/* SVG lines behind nodes */}
+      <svg width={svgWidth} height={svgHeight} style={{ position: 'absolute', left: '50%', top: 0, transform: 'translateX(-50%)', pointerEvents: 'none', zIndex: 0 }}>
+        {/* Connect every neuron in each row to every neuron in the next row */}
+        {Array.from({length: rowCount - 1}, (_, rowIdx) =>
+          rows[rowIdx].map((fromNode, i) =>
+            rows[rowIdx + 1].map((toNode, j) => (
+              <line
+                key={`line-${rowIdx}-${i}-${j}`}
+                x1={fromNode.x}
+                y1={fromNode.y}
+                x2={toNode.x}
+                y2={toNode.y}
+                stroke="#991b1b"
+                strokeWidth="4"
+                opacity="0.7"
+              />
+            ))
+          )
+        )}
+      </svg>
+      {/* Render all neurons */}
+      {rows.map((row, rowIdx) =>
+        row.map((pos, i) => (
+          <div key={`row${rowIdx}-node${i}`} style={{
+            position: 'absolute',
+            left: `calc(50% - ${svgWidth/2 - (pos.x - nodeRadius)}px)`,
+            top: `${pos.y - nodeRadius}px`,
+            width: `${nodeRadius*2}px`,
+            height: `${nodeRadius*2}px`,
+            border: '4px solid #fff',
+            borderRadius: '50%',
+            background: '#111827',
+            boxShadow: '0 0 18px #8b5cf6',
+            zIndex: 1,
+          }} />
+        ))
+      )}
+    </div>
+  );
+}
