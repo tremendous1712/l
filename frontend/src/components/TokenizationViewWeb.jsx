@@ -8,7 +8,7 @@ import { useSpring, animated, useTrail } from "@react-spring/web";
  * and vertical flow from tokens to IDs to embeddings. Uses normal DOM elements
  * instead of Three.js Html components.
  */
-export const TokenizationView = ({ sentence, tokens, inputIds, embeddings }) => {
+export const TokenizationViewWeb = ({ sentence, tokens, inputIds, embeddings }) => {
   const [currentPhase, setCurrentPhase] = useState('typing');
   const [typedText, setTypedText] = useState('');
   const [highlightedTokens, setHighlightedTokens] = useState([]);
