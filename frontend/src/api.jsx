@@ -45,11 +45,12 @@ export const fetchAttention = async (text) => {
 /**
  * Fetch next token prediction for input text
  * @param {string} text - Input text to predict next token for
+ * @param {number} [temp=1.0] - Temperature for sampling (optional, defaults to 1.0)
  * @returns {Promise<Object|null>} Next token prediction with probabilities, or null if failed
  */
-export const fetchNextToken = async (text) => {
+export const fetchNextToken = async (text, temp = 1.0) => {
   try {
-    const response = await axios.post(`${API_BASE}/next_token`, { text });
+    const response = await axios.post(`${API_BASE}/next_token`, { text, temperature: temp });
     return response.data;
   } catch (e) {
     return null;

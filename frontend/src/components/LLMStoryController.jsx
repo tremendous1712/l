@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { Html } from '@react-three/drei';
 import { LLMScene } from "./LLMScene";
+import { fetchNextToken } from "../api";
 
 import { TokenizationViewWeb } from "./TokenizationViewWeb";
 import { Embeddings3D } from "./Embeddings3D";
 import { SoftmaxView } from "./SoftmaxView";
 import { TransformerBlockVisualizer } from "./TransformerBlockVisualizer";
+import { TempCompareView } from "./TempCompareView";
 
 /**
  * Navigation steps for the LLM visualization story
@@ -15,6 +17,7 @@ const STORY_STEPS = [
   { name: "Embeddings - 3D" },
   { name: "Transformer Block" },
   { name: "Softmax" },
+  { name: "Temperature Comparison" },
 ];
 
 /**
@@ -33,9 +36,10 @@ const STORY_STEPS = [
  * @param {Object} props.tokenData - Raw tokenization data with IDs
  * @returns {JSX.Element} The LLM story controller interface
  */
-export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention, nextToken, hiddenStates, tokenData }) => {
+export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention, nextToken: initialNextToken, hiddenStates, tokenData }) => {
   const [step, setStep] = useState(0);
-
+  const [layer, setLayer] = useState(0);
+  const [nextToken, setNextToken] = useState(initialNextToken);//
   return (
     <div>
       {/* Navigation */}
@@ -111,6 +115,17 @@ export const LLMStoryController = ({ inputText, tokens, embeddings3d, attention,
             sentence={inputText} 
             attention={attention}
             tokens={tokens}
+          />
+        </div>
+      )}
+
+      {/* Temperature Comparison - Full Page */}
+      {step === 4 && (
+        <div className="temp-compare-container">
+          <TempCompareView 
+            seedText={inputText} 
+            tokens={tokens} 
+            layer={layer} 
           />
         </div>
       )}
