@@ -63,6 +63,11 @@ class EmbeddingInput(BaseModel):
     text: str
     layer: int = 0  # Default to layer 0
 
+class NextTokenInput(BaseModel):
+    """Request model for next token and added temperature"""
+    text: str
+    temperature: float = 1.0  # Default to temp 1
+
 
 @app.post("/tokenize")
 def tokenize_text(input: TextInput):
@@ -109,7 +114,7 @@ def tokenize_text(input: TextInput):
         return {"input_ids": [], "tokens": [], "attention_mask": []}
 
 @app.post("/next_token")
-def next_token_prediction(input: TextInput):
+def next_token_prediction(input: NextTokenInput):
     """
     Predict next token using GPT-2 model
     
@@ -133,28 +138,24 @@ def next_token_prediction(input: TextInput):
             
             # Get the logits for the last token (next token prediction)
             next_token_logits = logits[0, -1, :]
+             
+            # Apply temperature scaling
+
+            temperature = max(input.temperature, 1e-6)
+            next_token_logits = next_token_logits / temperature
+            top_logits, top_indices = torch.topk(next_token_logits, k=10, dim=-1)
             
-            # Apply softmax to get probabilities
-            probs = torch.softmax(next_token_logits, dim=-1)
-            
-            # Get top 10 probabilities and their corresponding tokens
-            top_probs, top_indices = torch.topk(probs, k=10, dim=-1)
-            
-            # Convert to list and get tokens for each probability
-            top_probs_list = top_probs.tolist()
+            probs = torch.softmax(top_logits, dim=-1)
             top_tokens = [tokenizer.decode([idx.item()]) for idx in top_indices]
-            
-            # Get raw logits for the top 10 tokens (for softmax animation)
-            top_logits = next_token_logits[top_indices].tolist()
-            
-            # Format probabilities for frontend
-            probs_list = [{"token": token.strip(), "prob": prob, "logit": logit} for token, prob, logit in zip(top_tokens, top_probs_list, top_logits)]
-            
-            # Get the top token (highest probability)
-            token = top_tokens[0].strip()
-            token_id = top_indices[0].item()
-            probability = top_probs_list[0]
-            
+            top_probs_list = probs.tolist()
+            probs_list = [{"token": token.strip(), "prob": prob} for token, prob in zip(top_tokens, top_probs_list)]
+           
+            # Random sampling instead of greedy selection
+            sampled_idx = torch.multinomial(probs, num_samples=1).item()
+            token = top_tokens[sampled_idx].strip()
+            token_id = top_indices[sampled_idx].item()
+            probability = top_probs_list[sampled_idx]
+
         return {
             "token": token,
             "token_id": token_id,
